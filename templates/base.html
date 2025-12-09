@@ -1,178 +1,129 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ app_name }} - {{ now.strftime('%Y-%m-%d') }}</title>
-    <link rel="icon" href="/static/img/favicon.ico" type="image/x-icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ app_name }} - {{ now.strftime('%Y-%m-%d') }}</title>
+  <link rel="icon" href="/static/img/favicon.ico" type="image/x-icon">
 
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-    <!-- CSS principal -->
-    <link rel="stylesheet" href="/static/css/dashboard.css">
-  
-
-<script>
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const logo = document.querySelector('.navbar-brand img');
-  if (logo) {
-    logo.src = prefersDark
-      ? '/static/img/sat-logo-dark.svg'
-      : '/static/img/sat-logo-light.svg';
-  }
-</script>
-
-    
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
- 
+
 <body>
 
+<!-- ✅ NAVBAR CON LOGO CENTRADO -->
 <nav class="navbar navbar-dark bg-dark">
   <div class="container-fluid justify-content-center py-2">
     <a href="/" class="navbar-brand d-flex flex-column align-items-center">
-      <img src="/static/img/sat-logo.svg" alt="SAT Dashboard" height="72" class="mb-1">
+      <img id="sat-logo" src="/static/img/sat-logo-dark.svg" alt="SAT Dashboard" height="72" class="mb-1">
       <span class="text-white fw-bold fs-5">SAT Dashboard</span>
     </a>
   </div>
 </nav>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-
-    <!-- LOGO + enlace al inicio -->
-    <a href="/" class="navbar-brand d-flex align-items-center">
-      <img src="/static/img/sat-logo.svg" alt="SAT Dashboard" height="32" class="me-2">
-      <span class="fw-bold">SAT Dashboard</span>
-    </a>
-
-    <!-- resto del menú -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <!-- Aquí van tus enlaces -->
-    </div>
-
-  </div>
-</nav>
-
 <!-- ✅ TOP BAR NUEVA -->
 <div class="topbar d-flex align-items-center justify-content-between px-4 shadow-sm">
+  <div class="topbar-left">
+    <span class="topbar-title">
+      Contribuyentes Publicados por el SAT (Art. 69-B CFF)
+    </span>
+  </div>
 
-    <!-- Título principal -->
-    <div class="topbar-left">
-        <span class="topbar-title">
-            Contribuyentes Publicados por el SAT (Art. 69-B CFF)
-        </span>
-    </div>
+  <div class="topbar-right d-flex align-items-center gap-4">
+    <a class="menu-link" href="/search">Buscar</a>
+    <a class="menu-link" href="/tablas">Tablas</a>
+    <a class="menu-link" href="/estadisticas">Estadísticas</a>
+    <a class="menu-link" href="/carga_csv">Carga CSV</a>
+    <a class="menu-link" href="/carga_masiva">Consulta RFCs</a>
+    <a class="menu-link" href="/historial_cargas">Historial</a>
 
-    <!-- Menú + Toggle -->
-    <div class="topbar-right d-flex align-items-center gap-4">
-
-        <a class="menu-link" href="/search">Buscar</a>
-        <a class="menu-link" href="/tablas">Tablas</a>
-        <a class="menu-link" href="/estadisticas">Estadísticas</a>
-        <a class="menu-link" href="/carga_csv">Carga CSV</a>
-        <a class="menu-link" href="/carga_masiva">Consulta RFCs</a>
-        <a class="menu-link" href="/historial_cargas">Historial</a>
-
-        <!-- Toggle animado -->
-        <label class="theme-switch">
-            <input type="checkbox" id="themeToggle">
-            <span class="slider"></span>
-        </label>
-    </div>
+    <!-- Toggle animado -->
+    <label class="theme-switch">
+      <input type="checkbox" id="themeToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
 </div>
 
-<!-- ✅ CONTENIDO EN CARDS -->
+<!-- ✅ CONTENIDO -->
 <div class="container-fluid px-4 mt-4 mb-5">
-    {% block content %}
-    {% endblock %}
+  {% block content %}
+  {% endblock %}
 </div>
 
 <!-- ✅ FOOTER -->
 <footer class="text-center py-3 mt-4">
-    Sistema SAT © {{ now.year }} — Desarrollado para uso interno
+  Sistema SAT © {{ now.year }} — Desarrollado para uso interno
 </footer>
 
-<!-- Bootstrap JS -->
+<!-- ✅ Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- ✅ SCRIPT ÚNICO DEL TOGGLE -->
+<!-- ✅ TOGGLE DARK MODE -->
 <script>
-    const toggle = document.getElementById('themeToggle');
+  const toggle = document.getElementById('themeToggle');
 
-    function loadDarkCSS() {
-        if (!document.getElementById('darkCSS')) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = '/static/css/dark.css';
-            link.id = 'darkCSS';
-            document.head.appendChild(link);
-        }
+  function loadDarkCSS() {
+    if (!document.getElementById('darkCSS')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/static/css/dark.css';
+      link.id = 'darkCSS';
+      document.head.appendChild(link);
     }
+  }
 
-    function removeDarkCSS() {
-        const darkLink = document.getElementById('darkCSS');
-        if (darkLink) darkLink.remove();
-    }
+  function removeDarkCSS() {
+    const darkLink = document.getElementById('darkCSS');
+    if (darkLink) darkLink.remove();
+  }
 
-    const savedTheme = localStorage.getItem('theme') || 'light';
+  const savedTheme = localStorage.getItem('theme') || 'light';
 
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        toggle.checked = true;
-        loadDarkCSS();
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    toggle.checked = true;
+    loadDarkCSS();
+  } else {
+    document.body.classList.remove('dark-mode');
+    toggle.checked = false;
+    removeDarkCSS();
+  }
+
+  toggle.addEventListener('change', () => {
+    if (toggle.checked) {
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+      loadDarkCSS();
     } else {
-        document.body.classList.remove('dark-mode');
-        toggle.checked = false;
-        removeDarkCSS();
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+      removeDarkCSS();
     }
+  });
+</script>
 
-    toggle.addEventListener('change', () => {
-        if (toggle.checked) {
-            document.body.classList.add('dark-mode');
-            localStorage.setItem('theme', 'dark');
-            loadDarkCSS();
-        } else {
-            document.body.classList.remove('dark-mode');
-            localStorage.setItem('theme', 'light');
-            removeDarkCSS();
-        }
-    });
+<!-- ✅ CAMBIO DE LOGO SEGÚN TEMA -->
+<script>
+  const logo = document.getElementById('sat-logo');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  if (logo) {
+    logo.src = prefersDark
+      ? '/static/img/sat-logo-dark.svg'
+      : '/static/img/sat-logo-light.svg';
+  }
 </script>
 
 <!-- ✅ BLOQUE PARA SCRIPTS DE CADA VISTA -->
 {% block scripts %}{% endblock %}
 
-<script>
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const logo = document.getElementById('sat-logo');
-  if (logo) {
-    logo.src = prefersDark
-      ? '/static/img/sat-logo-dark.svg'
-      : '/static/img/sat-logo-light.svg';
-  }
-</script>
-
-<script>
-  const logo = document.getElementById('sat-logo');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (logo) {
-    logo.src = prefersDark
-      ? '/static/img/sat-logo-dark.svg'
-      : '/static/img/sat-logo-light.svg';
-  }
-</script>
-
-    
 </body>
 </html>
