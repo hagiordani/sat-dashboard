@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Estadísticas Detalladas</h1>
+
+<div class="card">
+  <h2>Totales por Tabla</h2>
+  <table>
+    <tr><th>Tabla</th><th>Total</th></tr>
+    {% for tabla, total in stats.items() %}
+      <tr><td>{{ tabla }}</td><td>{{ total }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Duplicados por Tabla</h2>
+  <table>
+    <tr><th>Tabla</th><th>Duplicados</th></tr>
+    {% for tabla, total in duplicates.items() %}
+      <tr><td>{{ tabla }}</td><td>{{ total }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Situaciones del 69-B</h2>
+  <table>
+    <tr><th>Situación</th><th>Cantidad</th></tr>
+    {% for s in situaciones %}
+      <tr><td>{{ s.situacion_contribuyente }}</td><td>{{ s.count }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Últimas Actualizaciones</h2>
+  <table>
+    <tr><th>Tabla</th><th>Fecha</th><th>Registros</th></tr>
+    {% for u in actualizaciones %}
+      <tr>
+        <td>{{ u.table_name }}</td>
+        <td>
+          {% if u.ultima_actualizacion %}
+            {{ u.ultima_actualizacion.strftime('%d/%m/%Y') }}
+          {% else %}
+            <em>Sin fecha</em>
+          {% endif %}
+        </td>
+        <td>{{ u.total_registros }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="mb-4">Carga Masiva de RFCs (TXT)</h1>
+
+<div class="card p-4 shadow-sm">
+  <h2 class="h5 mb-3">Subir archivo TXT</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="/carga_masiva" enctype="multipart/form-data" class="needs-validation" novalidate>
+
+    <div class="mb-3">
+      <label class="form-label">Archivo TXT:</label>
+      <input type="file" class="form-control" name="archivo" accept=".txt" required>
+      <div class="invalid-feedback">Por favor selecciona un archivo TXT válido.</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Nombre del reporte (opcional):</label>
+      <input type="text" class="form-control" name="nombre_reporte" placeholder="ej: reporte_enero">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Procesar</button>
+
+  </form>
+</div>
+
+{% endblock %}
