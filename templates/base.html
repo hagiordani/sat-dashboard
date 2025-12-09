@@ -148,5 +148,16 @@
 <!-- ✅ BLOQUE PARA SCRIPTS DE CADA VISTA -->
 {% block scripts %}{% endblock %}
 
+<script>
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const logo = document.getElementById('sat-logo');
+  if (logo) {
+    logo.src = prefersDark
+      ? '/static/img/sat-logo-dark.svg'
+      : '/static/img/sat-logo-light.svg';
+  }
+</script>
+
+    
 </body>
 </html>
