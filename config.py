@@ -4,7 +4,7 @@ Configuración centralizada para el sistema SAT
 
 # Configuración de conexión a la base de datos
 DB_CONFIG = {
-    "host": "mysql-sat",
+    "host": "dev_mysql-sat",
     "user": "satuser",
     "password": "satpass",
     "database": "satdb"
