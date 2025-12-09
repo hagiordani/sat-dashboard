@@ -8,64 +8,58 @@
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Bootstrap Icons ✅ -->
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <!-- CSS principal -->
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
 
-
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container">
-        <a class="navbar-brand" href="/">Contribuyentes Publicados por el SAT (Art. 69-B CFF)</a>
+<!-- ✅ TOP BAR NUEVA -->
+<div class="topbar d-flex align-items-center justify-content-between px-4 shadow-sm">
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-
-            <ul class="navbar-nav ms-auto">
-
-                <!-- Toggle animado -->
-                <li class="nav-item d-flex align-items-center ms-3">
-                    <label class="theme-switch">
-                        <input type="checkbox" id="themeToggle">
-                        <span class="slider"></span>
-                    </label>
-                </li>
-
-                <li class="nav-item"><a class="nav-link" href="/search">Buscar</a></li>
-                <li class="nav-item"><a class="nav-link" href="/tablas">Tablas</a></li>
-                <li class="nav-item"><a class="nav-link" href="/estadisticas">Estadísticas</a></li>
-                <li class="nav-item"><a class="nav-link" href="/carga_csv">Carga CSV</a></li>
-                <li class="nav-item"><a class="nav-link" href="/carga_masiva">Consulta RFCs</a></li>
-                <li class="nav-item"><a class="nav-link" href="/historial_cargas">Historial</a></li>
-
-            </ul>
-        </div>
+    <!-- Título principal -->
+    <div class="topbar-left">
+        <span class="topbar-title">
+            Contribuyentes Publicados por el SAT (Art. 69-B CFF)
+        </span>
     </div>
-</nav>
 
-<!-- CONTENIDO PRINCIPAL -->
-<div class="container mt-4 mb-5">
+    <!-- Menú + Toggle -->
+    <div class="topbar-right d-flex align-items-center gap-4">
+
+        <a class="menu-link" href="/search">Buscar</a>
+        <a class="menu-link" href="/tablas">Tablas</a>
+        <a class="menu-link" href="/estadisticas">Estadísticas</a>
+        <a class="menu-link" href="/carga_csv">Carga CSV</a>
+        <a class="menu-link" href="/carga_masiva">Consulta RFCs</a>
+        <a class="menu-link" href="/historial_cargas">Historial</a>
+
+        <!-- Toggle animado -->
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+</div>
+
+<!-- ✅ CONTENIDO EN CARDS -->
+<div class="container-fluid px-4 mt-4 mb-5">
     {% block content %}
     {% endblock %}
 </div>
 
-<!-- FOOTER -->
-<footer>
+<!-- ✅ FOOTER -->
+<footer class="text-center py-3 mt-4">
     Sistema SAT © {{ now.year }} — Desarrollado para uso interno
 </footer>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- SCRIPT ÚNICO DEL TOGGLE -->
+<!-- ✅ SCRIPT ÚNICO DEL TOGGLE -->
 <script>
     const toggle = document.getElementById('themeToggle');
 
@@ -84,7 +78,6 @@
         if (darkLink) darkLink.remove();
     }
 
-    // Cargar preferencia guardada
     const savedTheme = localStorage.getItem('theme') || 'light';
 
     if (savedTheme === 'dark') {
@@ -97,7 +90,6 @@
         removeDarkCSS();
     }
 
-    // Evento del toggle
     toggle.addEventListener('change', () => {
         if (toggle.checked) {
             document.body.classList.add('dark-mode');
@@ -110,6 +102,9 @@
         }
     });
 </script>
+
+<!-- ✅ BLOQUE PARA SCRIPTS DE CADA VISTA -->
+{% block scripts %}{% endblock %}
 
 </body>
 </html>

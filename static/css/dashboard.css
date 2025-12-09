@@ -1,223 +1,181 @@
-/* ================================
-   ESTILOS GENERALES
-================================ */
+/* =========================================================
+   VARIABLES LIGHT MODE
+   ========================================================= */
+:root {
+    --topbar-bg: #ffffff;
+    --topbar-text: #1f1f1f;
+    --menu-link: #1f1f1f;
 
-body {
-    background-color: #f5f6fa;
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
-    color: #333;
+    --card-bg: #ffffff;
+    --card-text: #1f1f1f;
+    --card-border: #e5e5e5;
+    --card-shadow: 0 2px 6px rgba(0,0,0,0.08);
+
+    --footer-bg: #f8f9fa;
+    --footer-text: #555;
 }
 
-body.dark-mode {
-    transition: background-color 0.3s ease, color 0.3s ease;
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+.topbar {
+    height: 64px;
+    background: var(--topbar-bg);
+    color: var(--topbar-text);
+    border-bottom: 1px solid var(--card-border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
-h1, h2, h3, h4 {
+.topbar-title {
+    font-size: 18px;
     font-weight: 600;
-    color: #0d1b2a;
+    letter-spacing: -0.2px;
 }
 
-a {
+.menu-link {
+    color: var(--menu-link);
     text-decoration: none;
-}
-
-/* ================================
-   NAVBAR
-================================ */
-
-.navbar {
-    padding: 12px 0;
-}
-
-.navbar-brand {
-    font-weight: 700;
-    font-size: 1.3rem;
-    letter-spacing: 0.5px;
-}
-
-.nav-link {
     font-weight: 500;
-    margin-left: 10px;
+    transition: opacity 0.2s ease;
 }
 
-.nav-link:hover {
-    opacity: 0.85;
+.menu-link:hover {
+    opacity: 0.6;
 }
 
-/* ================================
-   TARJETAS / CARDS
-================================ */
+/* =========================================================
+   CARDS
+   ========================================================= */
+.container-fluid {
+    max-width: 1600px;
+}
 
 .card {
-    border-radius: 12px;
-    border: none;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    background: var(--card-bg);
+    color: var(--card-text);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: var(--card-shadow);
+    transition: background 0.3s ease, color 0.3s ease, transform 0.15s ease;
 }
 
-.card h2 {
-    font-size: 1.2rem;
-    margin-bottom: 15px;
+.card:hover {
+    transform: translateY(-2px);
 }
 
-/* ================================
-   TABLAS
-================================ */
-
-.table {
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
+.card h3, .card h4 {
+    margin-bottom: 12px;
+    font-weight: 600;
 }
 
-.table thead {
-    background: #007bff;
-    color: white;
+/* KPI Cards */
+.kpi-card {
+    text-align: center;
+    padding: 28px;
 }
 
-.table-hover tbody tr:hover {
-    background-color: #f1f5ff;
+.kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 6px;
 }
 
-.table td, .table th {
-    vertical-align: middle;
+.kpi-label {
+    font-size: 15px;
+    opacity: 0.8;
 }
 
-/* ================================
-   BOTONES
-================================ */
-
-.btn {
-    border-radius: 8px;
-    padding: 8px 18px;
-    font-weight: 500;
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    opacity: 0.8;
 }
 
-.btn-primary {
-    background-color: #007bff;
-    border: none;
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
 }
 
-.btn-primary:hover {
-    background-color: #0069d9;
+/* =========================================================
+   FOOTER
+   ========================================================= */
+footer {
+    background: var(--footer-bg);
+    color: var(--footer-text);
+    font-size: 14px;
+    border-top: 1px solid var(--card-border);
 }
 
-.btn-danger {
-    border: none;
-}
-
-.btn-success {
-    border: none;
-}
-
-/* ================================
-   ALERTAS (FLASH MESSAGES)
-================================ */
-
-.alert {
-    border-radius: 8px;
-    font-size: 0.95rem;
-}
-
-/* ================================
-   FORMULARIOS
-================================ */
-
-.form-control {
-    border-radius: 8px;
-    padding: 10px;
-}
-
-.form-label {
-    font-weight: 500;
-}
-
-/* ================================
-   TOGGLE ANIMADO (iOS STYLE)
-================================ */
-
+/* =========================================================
+   TOGGLE SWITCH
+   ========================================================= */
 .theme-switch {
     position: relative;
+    width: 48px;
+    height: 24px;
     display: inline-block;
-    width: 52px;
-    height: 28px;
 }
 
 .theme-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+    display: none;
 }
 
 .slider {
     position: absolute;
     cursor: pointer;
+    background: #ccc;
+    border-radius: 34px;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 34px;
+    transition: 0.3s;
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 22px;
-    width: 22px;
+    height: 18px;
+    width: 18px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
-    transition: .4s;
+    background: white;
     border-radius: 50%;
+    transition: 0.3s;
 }
 
 input:checked + .slider {
-    background-color: #0d6efd;
+    background: #4a90e2;
 }
 
 input:checked + .slider:before {
     transform: translateX(24px);
 }
 
-/* ================================
-   FOOTER
-================================ */
-
-footer {
-    margin-top: 50px;
-    padding: 20px 0;
-    background: #fff;
-    border-top: 1px solid #ddd;
-    text-align: center;
-    color: #666;
-    font-size: 0.9rem;
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 992px) {
+    .topbar-right {
+        gap: 16px;
+    }
 }
 
-/* ================================
-   PAGINACIÓN
-================================ */
+@media (max-width: 768px) {
+    .topbar {
+        flex-direction: column;
+        height: auto;
+        padding: 12px 20px;
+        gap: 10px;
+        text-align: center;
+    }
 
-.pagination .page-link {
-    border-radius: 6px;
-    margin: 0 3px;
-}
-
-.pagination .page-item.active .page-link {
-    background-color: #007bff;
-    border-color: #007bff;
-}
-
-/* ================================
-   ANIMACIONES SUAVES
-================================ */
-
-.fade-in {
-    animation: fadeIn 0.4s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+    .topbar-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }

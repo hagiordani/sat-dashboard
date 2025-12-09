@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row g-4">
+
+    <!-- KPIs -->
+    <div class="col-md-4">
+        <div class="card kpi-card">
+            <div class="kpi-value">1,284</div>
+            <div class="kpi-label">RFCs encontrados</div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card kpi-card">
+            <div class="kpi-value">312</div>
+            <div class="kpi-label">Presuntos</div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card kpi-card">
+            <div class="kpi-value">972</div>
+            <div class="kpi-label">Definitivos</div>
+        </div>
+    </div>
+
+    <!-- Gráfica -->
+    <div class="col-12">
+        <div class="card">
+            <h3>Distribución por Estatus</h3>
+            <canvas id="chartEstatus"></canvas>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="col-lg-8">
+        <div class="card">
+            <h3>Resultados</h3>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>RFC</th>
+                            <th>Nombre</th>
+                            <th>Estatus</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ABC123456789</td>
+                            <td>Empresa Ejemplo</td>
+                            <td>Presunto</td>
+                            <td>2024-01-15</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="col-lg-4">
+        <div class="card">
+            <h3>Actividad reciente</h3>
+
+            <ul class="list-group mt-3">
+                <li class="list-group-item">Carga masiva completada</li>
+                <li class="list-group-item">Se encontraron 12 RFCs nuevos</li>
+                <li class="list-group-item">Actualización de tablas realizada</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const ctx = document.getElementById('chartEstatus');
+
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Presuntos', 'Definitivos'],
+        datasets: [{
+            data: [312, 972],
+            backgroundColor: ['#ff6384', '#36a2eb']
+        }]
+    }
+});
+</script>
+{% endblock %}
