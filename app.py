@@ -585,7 +585,7 @@ def carga_masiva():
         ruta_destino = request.form.get('ruta_destino', 'static/descargas')
 
         if not archivo or archivo.filename == '':
-            flash(('danger', 'No seleccionaste ningún archivo'))
+            flash('No seleccionaste ningún archivo', 'danger')
             return redirect(request.url)
 
         try:
@@ -604,20 +604,14 @@ def carga_masiva():
                 for rfc in rfcs:
                     f.write(rfc + '\n')
 
-            # Mostrar botón de descarga
             enlace = f"/{ruta_completa}"
 
-            flash((
-                'success',
-                f'Se procesaron {len(rfcs)} RFCs. '
-                f'<a href="{enlace}" download class="btn btn-success btn-sm ms-2">Descargar archivo</a>'
-            ))
+            flash(f'Se procesaron {len(rfcs)} RFCs. <a href="{enlace}" download class="btn btn-success btn-sm ms-2">Descargar archivo</a>', 'success')
 
             return redirect('/carga_masiva')
 
         except Exception as e:
-            flash(('danger', f'Error procesando archivo: {e}'))
+            flash(f'Error procesando archivo: {e}', 'danger')
             return redirect('/carga_masiva')
 
     return render_template('carga_masiva.html')
-
