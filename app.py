@@ -577,6 +577,7 @@ def historial_cargas():
 # ---------------------------------------------------------
 # CARGA MASIVA TXT
 # ---------------------------------------------------------
+
 @app.route('/carga_masiva', methods=['GET', 'POST'])
 def carga_masiva():
     if request.method == 'POST':
@@ -592,21 +593,58 @@ def carga_masiva():
             contenido = archivo.read().decode('latin1').splitlines()
             rfcs = [line.strip().upper() for line in contenido if line.strip()]
 
+            # Conexión a BD
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            tablas = {
+                'Definitivos': 'Definitivos',
+                'Desvirtuados': 'Desvirtuados',
+                'Presuntos': 'Presuntos',
+                'SentenciasFavorables': 'SentenciasFavorables',
+                'Listado_Completo_69_B': 'Listado_Completo_69_B'
+            }
+
+            resultados = []
+
+            # Buscar cada RFC en las tablas
+            for rfc in rfcs:
+                encontrado_en = ""
+
+                for nombre_tabla, tabla_real in tablas.items():
+                    cursor.execute(
+                        f"SELECT COUNT(*) AS total FROM {tabla_real} WHERE UPPER(rfc) = %s",
+                        (rfc,)
+                    )
+                    if cursor.fetchone()['total'] > 0:
+                        encontrado_en = nombre_tabla
+                        break
+
+                resultados.append([rfc, encontrado_en])
+
+            cursor.close()
+            conn.close()
+
             # Crear carpeta si no existe
             os.makedirs(ruta_destino, exist_ok=True)
 
-            # Nombre final del archivo
-            nombre_final = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            # Nombre final del archivo CSV
+            nombre_final = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             ruta_completa = os.path.join(ruta_destino, nombre_final)
 
-            # Guardar archivo generado
-            with open(ruta_completa, 'w', encoding='utf-8') as f:
-                for rfc in rfcs:
-                    f.write(rfc + '\n')
+            # Guardar CSV
+            with open(ruta_completa, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(["Procesado", "Encontrado en"])
+                writer.writerows(resultados)
 
             enlace = f"/{ruta_completa}"
 
-            flash(f'Se procesaron {len(rfcs)} RFCs. <a href="{enlace}" download class="btn btn-success btn-sm ms-2">Descargar archivo</a>', 'success')
+            flash(
+                f'Se procesaron {len(rfcs)} RFCs. '
+                f'<a href="{enlace}" download class="btn btn-success btn-sm ms-2">Descargar CSV</a>',
+                'success'
+            )
 
             return redirect('/carga_masiva')
 
