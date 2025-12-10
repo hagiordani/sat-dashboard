@@ -4,37 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ app_name }} - {{ now.strftime('%Y-%m-%d') }}</title>
-  <link rel="icon" href="/static/img/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon">
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-  <!-- CSS principal -->
-  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 
 <body>
 
 <!-- ✅ NAVBAR CON LOGO CENTRADO -->
 <nav class="navbar navbar-dark bg-dark">
-  <div class="container-fluid justify-content-center py-0">
+  <div class="container-fluid justify-content-center py-1">
     <a href="/" class="navbar-brand d-flex flex-column align-items-center">
       <img id="sat-logo"
            src="{{ url_for('static', filename='img/sat-logo-dark.svg') }}"
            alt="SAT Dashboard"
-           height="60"
-           class="mb-1">
+           height="56">
       <span class="text-white fw-bold fs-5">SAT Dashboard</span>
     </a>
   </div>
 </nav>
 
-
-<!-- ✅ TOP BAR NUEVA -->
-<div class="topbar d-flex align-items-center justify-content-between px-4 shadow-sm">
+<!-- ✅ TOP BAR -->
+<div class="topbar d-flex align-items-center justify-content-between px-4 shadow-sm" style="height:48px;">
   <div class="topbar-left">
     <span class="topbar-title">
       Contribuyentes Publicados por el SAT (Art. 69-B CFF)
@@ -59,8 +53,7 @@
 
 <!-- ✅ CONTENIDO -->
 <div class="container-fluid px-4 mt-4 mb-5">
-  {% block content %}
-  {% endblock %}
+  {% block content %}{% endblock %}
 </div>
 
 <!-- ✅ FOOTER -->
@@ -73,60 +66,59 @@
 
 <!-- ✅ TOGGLE DARK MODE -->
 <script>
-  const toggle = document.getElementById('themeToggle');
+  window.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('themeToggle');
 
-  function loadDarkCSS() {
-    if (!document.getElementById('darkCSS')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = '/static/css/dark.css';
-      link.id = 'darkCSS';
-      document.head.appendChild(link);
+    function loadDarkCSS() {
+      if (!document.getElementById('darkCSS')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = "{{ url_for('static', filename='css/dark.css') }}";
+        link.id = 'darkCSS';
+        document.head.appendChild(link);
+      }
     }
-  }
 
-  function removeDarkCSS() {
-    const darkLink = document.getElementById('darkCSS');
-    if (darkLink) darkLink.remove();
-  }
+    function removeDarkCSS() {
+      const darkLink = document.getElementById('darkCSS');
+      if (darkLink) darkLink.remove();
+    }
 
-  const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'light';
 
-  if (savedTheme === 'dark') {
-    document.body.classList.add('dark-mode');
-    toggle.checked = true;
-    loadDarkCSS();
-  } else {
-    document.body.classList.remove('dark-mode');
-    toggle.checked = false;
-    removeDarkCSS();
-  }
-
-  toggle.addEventListener('change', () => {
-    if (toggle.checked) {
+    if (savedTheme === 'dark') {
       document.body.classList.add('dark-mode');
-      localStorage.setItem('theme', 'dark');
+      toggle.checked = true;
       loadDarkCSS();
     } else {
       document.body.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
+      toggle.checked = false;
       removeDarkCSS();
+    }
+
+    toggle.addEventListener('change', () => {
+      if (toggle.checked) {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        loadDarkCSS();
+      } else {
+        document.body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        removeDarkCSS();
+      }
+    });
+
+    // ✅ CAMBIO DE LOGO SEGÚN TEMA
+    const logo = document.getElementById('sat-logo');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (logo) {
+      logo.src = prefersDark
+        ? "{{ url_for('static', filename='img/sat-logo-dark.svg') }}"
+        : "{{ url_for('static', filename='img/sat-logo-light.svg') }}";
     }
   });
 </script>
-
-<!-- ✅ CAMBIO DE LOGO SEGÚN TEMA -->
-<script>
-  const logo = document.getElementById('sat-logo');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (logo) {
-    logo.src = prefersDark
-      ? "{{ url_for('static', filename='img/sat-logo-dark.svg') }}"
-      : "{{ url_for('static', filename='img/sat-logo-light.svg') }}";
-  }
-</script>
-
 
 <!-- ✅ BLOQUE PARA SCRIPTS DE CADA VISTA -->
 {% block scripts %}{% endblock %}
