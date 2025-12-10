@@ -1,73 +1,151 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Estadísticas Detalladas</h1>
+<h1 class="mb-4">Estadísticas Detalladas</h1>
 
-<div class="card">
-  <h2>Totales por Tabla</h2>
-  <table>
-    <tr><th>Tabla</th><th>Total</th></tr>
-    {% for tabla, total in stats.items() %}
-      <tr><td>{{ tabla }}</td><td>{{ total }}</td></tr>
-    {% endfor %}
-  </table>
+<!-- ============================
+     Totales por Tabla
+============================= -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-primary text-white fw-bold">
+    Totales por Tabla
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Tabla</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tabla, total in stats.items() %}
+        <tr>
+          <td>{{ tabla }}</td>
+          <td>{{ total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="card">
-  <h2>Duplicados por Tabla</h2>
-  <table>
-    <tr><th>Tabla</th><th>Duplicados</th></tr>
-    {% for tabla, total in duplicates.items() %}
-      <tr><td>{{ tabla }}</td><td>{{ total }}</td></tr>
-    {% endfor %}
-  </table>
+<!-- ============================
+     Duplicados
+============================= -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-danger text-white fw-bold">
+    Duplicados por Tabla
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Tabla</th>
+          <th>Duplicados</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tabla, total in duplicates.items() %}
+        <tr>
+          <td>{{ tabla }}</td>
+          <td>{{ total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="card">
-  <h2>Situaciones del 69-B</h2>
-  <table>
-    <tr><th>Situación</th><th>Cantidad</th></tr>
-    {% for s in situaciones %}
-      <tr><td>{{ s.situacion_contribuyente }}</td><td>{{ s.count }}</td></tr>
-    {% endfor %}
-  </table>
+<!-- ============================
+     Situaciones 69-B
+============================= -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-warning fw-bold">
+    Situaciones del Artículo 69-B
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Situación</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in situaciones %}
+        <tr>
+          <td>{{ s.situacion_contribuyente }}</td>
+          <td>{{ s.count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="card">
-  <h2>Últimas Actualizaciones</h2>
-  <table>
-    <tr><th>Tabla</th><th>Fecha</th><th>Registros</th></tr>
-    {% for u in actualizaciones %}
-      <tr>
-        <td>{{ u.table_name }}</td>
-        <td>
-          {% if u.ultima_actualizacion %}
-            {{ u.ultima_actualizacion.strftime('%d/%m/%Y') }}
-          {% else %}
-            <em>Sin fecha</em>
-          {% endif %}
-        </td>
-        <td>{{ u.total_registros }}</td>
-      </tr>
-    {% endfor %}
-  </table>
+<!-- ============================
+     Últimas Actualizaciones
+============================= -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-info text-white fw-bold">
+    Últimas Actualizaciones
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Tabla</th>
+          <th>Fecha</th>
+          <th>Registros</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in actualizaciones %}
+        <tr>
+          <td>{{ u.table_name }}</td>
+          <td>
+            {% if u.ultima_actualizacion %}
+              {{ u.ultima_actualizacion.strftime('%d/%m/%Y') }}
+            {% else %}
+              <em>Sin fecha</em>
+            {% endif %}
+          </td>
+          <td>{{ u.total_registros }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="alert alert-secondary mt-4">
+<!-- ============================
+     Texto legal general
+============================= -->
+{% if texto_legal %}
+<div class="alert alert-secondary mt-4 shadow-sm">
   <h5 class="fw-bold">Información oficial del SAT</h5>
   <p style="white-space: pre-line;">{{ texto_legal }}</p>
 </div>
+{% endif %}
 
-<h3 class="mt-4">Información legal por tabla</h3>
+<!-- ============================
+     Texto legal por tabla
+============================= -->
+<h3 class="mt-5 mb-3">Información legal por tabla</h3>
 
 {% for t in textos_legales %}
-<div class="alert alert-secondary mt-3">
-  <h5 class="fw-bold">{{ t.tabla }}</h5>
-  <p style="white-space: pre-line;">
-    {{ t.linea1 }}
-    
-    {{ t.linea2 }}
-  </p>
+<div class="card shadow-sm mb-3">
+  <div class="card-header bg-dark text-white fw-bold">
+    {{ t.tabla }}
+  </div>
+  <div class="card-body">
+    <p style="white-space: pre-line;">
+      {{ t.linea1 }}
+
+      {{ t.linea2 }}
+    </p>
+  </div>
 </div>
 {% endfor %}
 
