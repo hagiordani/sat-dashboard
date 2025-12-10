@@ -399,6 +399,16 @@ def ver_tabla(nombre_tabla):
         cursor.execute(f"DESCRIBE {tabla_real}")
         columnas = [col['Field'] for col in cursor.fetchall()]
 
+        # ✅ Obtener texto legal correspondiente a esta tabla
+        cursor.execute("""
+            SELECT linea1, linea2 
+            FROM Texto_Legal_Tablas 
+            WHERE tabla = %s 
+            ORDER BY id DESC 
+            LIMIT 1
+        """, (tabla_real,))
+        texto_legal = cursor.fetchone()
+
         total_pages = (total + per_page - 1) // per_page
 
         tabla_info = {
@@ -420,7 +430,8 @@ def ver_tabla(nombre_tabla):
             columnas=columnas,
             page=page,
             total_pages=total_pages,
-            total=total
+            total=total,
+            texto_legal=texto_legal
         )
 
     except Exception as e:
