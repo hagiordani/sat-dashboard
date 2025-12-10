@@ -14,7 +14,8 @@
     {% endfor %}
   {% endwith %}
 
-  <form method="POST" enctype="multipart/form-data" class="row g-3">
+  <!-- ✅ FORMULARIO ÚNICO -->
+  <form id="form_csv" method="POST" enctype="multipart/form-data" class="row g-3">
 
     <div class="col-md-6">
       <label class="form-label">Archivo CSV:</label>
@@ -34,10 +35,57 @@
     </div>
 
     <div class="col-12">
-      <button class="btn btn-primary">Cargar CSV</button>
+      <!-- ✅ BOTÓN QUE ABRE EL MODAL -->
+      <button type="button" id="btnConfirmar" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal">
+        Reemplazar tabla y cargar CSV
+      </button>
     </div>
 
   </form>
+
 </div>
+
+<!-- ✅ MODAL ÚNICO -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmar reemplazo de tabla</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <p class="mb-0">
+          ⚠️ Esta acción eliminará <strong>todos los registros actuales</strong> de la tabla:
+        </p>
+
+        <p class="fw-bold text-danger mt-2" id="tablaSeleccionadaTexto"></p>
+
+        <p class="mt-2 fw-bold">¿Deseas continuar?</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+        <!-- ✅ ENVÍA EL FORMULARIO -->
+        <button type="submit" class="btn btn-danger" form="form_csv">
+          Sí, reemplazar tabla
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ✅ SCRIPT PARA MOSTRAR TABLA SELECCIONADA -->
+<script>
+document.getElementById('btnConfirmar').addEventListener('click', function () {
+    const selectTabla = document.querySelector('select[name="tabla"]');
+    const tablaTexto = selectTabla.options[selectTabla.selectedIndex].text;
+
+    document.getElementById('tablaSeleccionadaTexto').innerText = tablaTexto;
+});
+</script>
 
 {% endblock %}
