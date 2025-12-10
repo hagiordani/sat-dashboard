@@ -1,91 +1,75 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1 class="mb-4">Carga de Archivos CSV</h1>
+<div class="container mt-4">
 
-<div class="card p-4 shadow-sm">
+  <h1 class="mb-4">Carga de Archivos CSV</h1>
 
+  <!-- ✅ Mensajes Flash -->
   {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-    {% endfor %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          {{ message | safe }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
   {% endwith %}
 
-  <!-- ✅ FORMULARIO ÚNICO -->
-  <form id="form_csv" method="POST" enctype="multipart/form-data" class="row g-3">
-
-    <div class="col-md-6">
-      <label class="form-label">Archivo CSV:</label>
-      <input type="file" name="archivo" class="form-control" accept=".csv" required>
+  <!-- ✅ Tarjeta principal -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white fw-bold">
+      Subir archivo CSV del SAT
     </div>
 
-    <div class="col-md-6">
-      <label class="form-label">Tabla destino:</label>
-      <select name="tabla" class="form-select" required>
-        <option value="">-- Seleccionar tabla --</option>
-        <option value="definitivos">Definitivos</option>
-        <option value="desvirtuados">Desvirtuados</option>
-        <option value="presuntos">Presuntos</option>
-        <option value="sentenciasfavorables">Sentencias Favorables</option>
-        <option value="listado_completo_69_b">Listado Completo 69-B</option>
-      </select>
-    </div>
+    <div class="card-body">
 
-    <div class="col-12">
-      <!-- ✅ BOTÓN QUE ABRE EL MODAL -->
-      <button type="button" id="btnConfirmar" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal">
-        Reemplazar tabla y cargar CSV
-      </button>
-    </div>
+      <form method="POST" enctype="multipart/form-data">
 
-  </form>
+        <!-- ✅ Selección de tabla -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">Selecciona la tabla destino:</label>
+          <select name="tabla" class="form-select" required>
+            <option value="">-- Selecciona una tabla --</option>
+            <option value="definitivos">Definitivos</option>
+            <option value="desvirtuados">Desvirtuados</option>
+            <option value="presuntos">Presuntos</option>
+            <option value="sentenciasfavorables">Sentencias Favorables</option>
+            <option value="listado_completo_69_b">Listado Completo 69-B</option>
+          </select>
+        </div>
 
-</div>
+        <!-- ✅ Archivo CSV -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">Selecciona el archivo CSV:</label>
+          <input type="file" name="archivo" accept=".csv" class="form-control" required>
+          <small class="text-muted">
+            Los archivos del SAT contienen texto legal en las líneas 1 y 2, y los encabezados reales en la línea 3.
+          </small>
+        </div>
 
-<!-- ✅ MODAL ÚNICO -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">Confirmar reemplazo de tabla</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body">
-        <p class="mb-0">
-          ⚠️ Esta acción eliminará <strong>todos los registros actuales</strong> de la tabla:
-        </p>
-
-        <p class="fw-bold text-danger mt-2" id="tablaSeleccionadaTexto"></p>
-
-        <p class="mt-2 fw-bold">¿Deseas continuar?</p>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-
-        <!-- ✅ ENVÍA EL FORMULARIO -->
-        <button type="submit" class="btn btn-danger" form="form_csv">
-          Sí, reemplazar tabla
+        <!-- ✅ Botón -->
+        <button type="submit" class="btn btn-success px-4">
+          <i class="bi bi-upload"></i> Cargar CSV
         </button>
-      </div>
+
+      </form>
 
     </div>
   </div>
+
+  <!-- ✅ Información adicional -->
+  <div class="alert alert-info mt-4 shadow-sm">
+    <h5 class="fw-bold">Notas importantes</h5>
+    <ul>
+      <li>Se crea un <strong>backup automático</strong> antes de reemplazar la tabla.</li>
+      <li>El sistema valida las columnas antes de borrar datos.</li>
+      <li>El texto legal del archivo se guarda por tabla.</li>
+      <li>Los encabezados reales deben estar en la línea 3 del CSV.</li>
+    </ul>
+  </div>
+
 </div>
-
-<!-- ✅ SCRIPT PARA MOSTRAR TABLA SELECCIONADA -->
-<script>
-document.getElementById('btnConfirmar').addEventListener('click', function () {
-    const selectTabla = document.querySelector('select[name="tabla"]');
-    const tablaTexto = selectTabla.options[selectTabla.selectedIndex].text;
-
-    document.getElementById('tablaSeleccionadaTexto').innerText = tablaTexto;
-});
-</script>
 
 {% endblock %}
