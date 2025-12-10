@@ -15,22 +15,28 @@
     {% endfor %}
   {% endwith %}
 
-  <form method="POST" action="/carga_masiva" enctype="multipart/form-data" class="needs-validation" novalidate>
+ 
+  <form method="POST" enctype="multipart/form-data">
 
-    <div class="mb-3">
-      <label class="form-label">Archivo TXT:</label>
-      <input type="file" class="form-control" name="archivo" accept=".txt" required>
-      <div class="invalid-feedback">Por favor selecciona un archivo TXT válido.</div>
-    </div>
+  <div class="mb-3">
+    <label class="form-label">Archivo TXT con RFCs</label>
+    <input type="file" class="form-control" name="archivo" required>
+  </div>
 
-    <div class="mb-3">
-      <label class="form-label">Nombre del reporte (opcional):</label>
-      <input type="text" class="form-control" name="nombre_reporte" placeholder="ej: reporte_enero">
-    </div>
+  <div class="mb-3">
+    <label class="form-label">Nombre del archivo generado (sin extensión)</label>
+    <input type="text" class="form-control" name="nombre_reporte" placeholder="reporte_rfc">
+  </div>
 
-    <button type="submit" class="btn btn-primary">Procesar</button>
+  <div class="mb-3">
+    <label class="form-label">Carpeta donde guardar</label>
+    <input type="text" class="form-control" name="ruta_destino" placeholder="static/descargas">
+  </div>
 
-  </form>
+  <button type="submit" class="btn btn-primary">Procesar RFCs</button>
+</form>
+
+ 
 </div>
 
 {% endblock %}
