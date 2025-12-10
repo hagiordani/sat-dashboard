@@ -9,44 +9,32 @@
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
       <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
+        {{ message|safe }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     {% endfor %}
   {% endwith %}
 
- 
   <form method="POST" enctype="multipart/form-data">
 
-  <div class="mb-3">
-    <label class="form-label">Archivo TXT con RFCs</label>
-    <input type="file" class="form-control" name="archivo" required>
-  </div>
+    <div class="mb-3">
+      <label class="form-label">Archivo TXT con RFCs</label>
+      <input type="file" class="form-control" name="archivo" required>
+    </div>
 
-  <div class="mb-3">
-    <label class="form-label">Nombre del archivo generado (sin extensión)</label>
-    <input type="text" class="form-control" name="nombre_reporte" placeholder="reporte_rfc">
-  </div>
+    <div class="mb-3">
+      <label class="form-label">Nombre del archivo generado (sin extensión)</label>
+      <input type="text" class="form-control" name="nombre_reporte" placeholder="reporte_rfc">
+    </div>
 
-  <div class="mb-3">
-        <label class="form-label">Nombre del archivo generado (sin extensión)</label>
-        <input type="text" class="form-control" name="nombre_reporte" placeholder="reporte_rfc">
-  </div>
+    <div class="mb-3">
+      <label class="form-label">Carpeta donde guardar</label>
+      <input type="text" class="form-control" name="ruta_destino" placeholder="static/descargas">
+    </div>
 
-<div class="mb-3">
-    <label class="form-label">Carpeta donde guardar</label>
-    <input type="text" class="form-control" name="ruta_destino" placeholder="static/descargas">
-</div>
+    <button type="submit" class="btn btn-primary">Procesar RFCs</button>
+  </form>
 
-  <div class="mb-3">
-    <label class="form-label">Carpeta donde guardar</label>
-    <input type="text" class="form-control" name="ruta_destino" placeholder="static/descargas">
-  </div>
-
-  <button type="submit" class="btn btn-primary">Procesar RFCs</button>
-</form>
-
- 
 </div>
 
 {% endblock %}
