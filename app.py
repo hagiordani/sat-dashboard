@@ -533,6 +533,99 @@ def carga_csv():
             # ✅ Leer encabezados reales desde línea 3
             df = pd.read_csv(archivo, header=2)
 
+            mapeo_definitivos = {
+                "No.": "numero",
+                "RFC": "rfc",
+                "Nombre del Contribuyente": "nombre_contribuyente",
+                "Situación del contribuyente": "situacion_contribuyente",
+                "Número y fecha de oficio global de presunción SAT": "oficio_presuncion_sat",
+                "Publicación página SAT presuntos": "publicacion_sat_presuntos",
+                "Número y fecha de oficio global de presunción DOF": "oficio_presuncion_dof",
+                "Publicación DOF presuntos": "publicacion_dof_presuntos",
+                "Número y fecha de oficio global de contribuyentes que desvirtuaron SAT": "oficio_desvirtuado_sat",
+                "Publicación página SAT desvirtuados": "publicacion_sat_desvirtuados",
+                "Número y fecha de oficio global de contribuyentes que desvirtuaron DOF": "oficio_desvirtuado_dof",
+                "Publicación DOF desvirtuados": "publicacion_dof_desvirtuados",
+                "Número y fecha de oficio global de definitivos SAT": "oficio_definitivo_sat",
+                "Publicación página SAT definitivos": "publicacion_sat_definitivos",
+                "Número y fecha de oficio global de definitivos DOF": "oficio_definitivo_dof",
+                "Publicación DOF definitivos": "publicacion_dof_definitivos",
+                "Número y fecha de oficio global de sentencia favorable SAT": "oficio_sentencia_sat",
+                "Publicación página SAT sentencia favorable": "publicacion_sat_sentencia",
+                "Número y fecha de oficio global de sentencia favorable DOF": "oficio_sentencia_dof",
+                "Publicación DOF sentencia favorable": "publicacion_dof_sentencia"
+            }
+            
+            mapeo_presuntos = {
+                "No.": "numero",
+                "RFC": "rfc",
+                "Nombre del Contribuyente": "nombre_contribuyente",
+                "Situación del contribuyente": "situacion_contribuyente",
+                "Número y fecha de oficio global de presunción SAT": "oficio_presuncion_sat",
+                "Publicación página SAT presuntos": "publicacion_sat_presuntos",
+                "Número y fecha de oficio global de presunción DOF": "oficio_presuncion_dof",
+                "Publicación DOF presuntos": "publicacion_dof_presuntos"
+            }
+            
+            mapeo_desvirtuados = {
+                "No.": "numero",
+                "RFC": "rfc",
+                "Nombre del Contribuyente": "nombre_contribuyente",
+                "Situación del contribuyente": "situacion_contribuyente",
+                "Número y fecha de oficio global de contribuyentes que desvirtuaron SAT": "oficio_desvirtuado_sat",
+                "Publicación página SAT desvirtuados": "publicacion_sat_desvirtuados",
+                "Número y fecha de oficio global de contribuyentes que desvirtuaron DOF": "oficio_desvirtuado_dof",
+                "Publicación DOF desvirtuados": "publicacion_dof_desvirtuados"
+            }
+            
+            mapeo_sentencias = {
+                "No.": "numero",
+                "RFC": "rfc",
+                "Nombre del Contribuyente": "nombre_contribuyente",
+                "Situación del contribuyente": "situacion_contribuyente",
+                "Número y fecha de oficio global de sentencia favorable SAT": "oficio_sentencia_sat",
+                "Publicación página SAT sentencia favorable": "publicacion_sat_sentencia",
+                "Número y fecha de oficio global de sentencia favorable DOF": "oficio_sentencia_dof",
+                "Publicación DOF sentencia favorable": "publicacion_dof_sentencia"
+            }
+            
+            mapeo_listado_completo = {
+                "No.": "numero",
+                "RFC": "rfc",
+                "Nombre del Contribuyente": "nombre_contribuyente",
+                "Situación del contribuyente": "situacion_contribuyente",
+                "Número y fecha de oficio global de presunción SAT": "oficio_presuncion_sat",
+                "Publicación página SAT presuntos": "publicacion_sat_presuntos",
+                "Número y fecha de oficio global de presunción DOF": "oficio_presuncion_dof",
+                "Publicación DOF presuntos": "publicacion_dof_presuntos",
+                "Número y fecha de oficio global de contribuyentes que desvirtuaron SAT": "oficio_desvirtuado_sat",
+                "Publicación página SAT desvirtuados": "publicacion_sat_desvirtuados",
+                "Número y fecha de oficio global de contribuyentes que desvirtuaron DOF": "oficio_desvirtuado_dof",
+                "Publicación DOF desvirtuados": "publicacion_dof_desvirtuados",
+                "Número y fecha de oficio global de definitivos SAT": "oficio_definitivo_sat",
+                "Publicación página SAT definitivos": "publicacion_sat_definitivos",
+                "Número y fecha de oficio global de definitivos DOF": "oficio_definitivo_dof",
+                "Publicación DOF definitivos": "publicacion_dof_definitivos",
+                "Número y fecha de oficio global de sentencia favorable SAT": "oficio_sentencia_sat",
+                "Publicación página SAT sentencia favorable": "publicacion_sat_sentencia",
+                "Número y fecha de oficio global de sentencia favorable DOF": "oficio_sentencia_dof",
+                "Publicación DOF sentencia favorable": "publicacion_dof_sentencia"
+            }
+            
+            
+            
+
+
+            
+            
+            mapeo = mapeos.get(tabla_real, {})
+            
+            # ✅ Renombrar columnas automáticamente
+            df.rename(columns=mapeo, inplace=True)
+
+
+
+            
             if df.empty:
                 flash('El archivo CSV está vacío', 'danger')
                 return redirect(request.url)
