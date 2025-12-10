@@ -495,6 +495,28 @@ def exportar_tabla(nombre_tabla):
 # ---------------------------------------------------------
 @app.route('/carga_csv', methods=['GET', 'POST'])
 def carga_csv():
+
+    import dateutil.parser
+
+def convertir_fecha(valor):
+    """
+    Convierte cualquier fecha del SAT a formato MySQL YYYY-MM-DD.
+    Si no se puede convertir, regresa None.
+    """
+    if not valor or str(valor).strip() == "" or str(valor).lower() in ["nan", "null", "-", "--", "—"]:
+        return None
+
+    try:
+        # Normalizar texto
+        valor = str(valor).replace("\n", " ").strip()
+
+        # Intentar conversión automática
+        fecha = dateutil.parser.parse(valor, dayfirst=True, fuzzy=True)
+        return fecha.strftime("%Y-%m-%d")
+
+    except Exception:
+        return None
+
     if request.method == 'POST':
 
         # Validación inicial del archivo
@@ -612,8 +634,25 @@ def carga_csv():
                 "Publicación DOF sentencia favorable": "publicacion_dof_sentencia"
             }
             
+            # ✅ Detectar columnas que son fechas en MySQL
+            columnas_fecha = [
+                "publicacion_sat_presuntos",
+                "publicacion_dof_presuntos",
+                "publicacion_sat_desvirtuados",
+                "publicacion_dof_desvirtuados",
+                "publicacion_sat_definitivos",
+                "publicacion_dof_definitivos",
+                "publicacion_sat_sentencia",
+                "publicacion_dof_sentencia",
+                "fecha_actualizacion"
+            ]
             
-            
+            # ✅ Convertir fechas automáticamente
+            for col in columnas_fecha:
+                if col in df.columns:
+                    df[col] = df[col].apply(convertir_fecha)
+                        
+                        
 
 
             
