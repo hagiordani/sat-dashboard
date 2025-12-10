@@ -261,6 +261,11 @@ def api_contribuyente(rfc):
 
 @app.route('/estadisticas')
 def estadisticas():
+    texto_legal = """
+        Información actualizada al 31 de octubre de 2025; los listados a que se hace mención, son de carácter público, y pueden ser consultados en el Portal del Servicio de Administración Tributaria https://www.gob.mx/sat -acciones y programas- rubro General, NOTIFICACIÓN A CONTRIBUYENTES CON OPERACIONES PRESUNTAMENTE INEXISTENTES Y LISTADOS DEFINITIVOS- https://www.gob.mx/sat/acciones-y-programas/notificacion-a-contribuyentes-con-operaciones-presuntamente-inexistentes-y-listados-definitivos-333336, mismos que, al encontrarse firmados mediante firma electrónica (SIFEN), cuentan con el carácter de original, de conformidad con lo establecido en los artículos 38, párrafos primero fracción V, tercero, cuarto, quinto y sexto, y 17-D párrafos tercero y décimo del Código Fiscal de la Federación.
+        Listado completo de contribuyentes (Artículo 69-B del CFF)
+        """
+
     conn = get_db_connection()
     if not conn:
         return "Error de conexión a la base de datos", 500
@@ -320,14 +325,16 @@ def estadisticas():
 
         cursor.close()
         conn.close()
-
+        
         return render_template(
             'estadisticas.html',
             stats=stats,
             duplicates=duplicates,
             situaciones=situaciones,
-            actualizaciones=actualizaciones
+            actualizaciones=actualizaciones,
+            texto_legal=texto_legal
         )
+
 
     except Exception as e:
         cursor.close()
@@ -530,9 +537,13 @@ def carga_csv():
             fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
             tabla_backup = f"{tabla_real}_backup_{fecha}"
             
+             # ✅ Crear backup automático
             cursor.execute(f"CREATE TABLE {tabla_backup} AS SELECT * FROM {tabla_real}")
             conn.commit()
             
+            # ✅ Mensaje inmediato de backup terminado
+            flash(f"✅ Backup creado correctamente: <strong>{tabla_backup}</strong>", "info")
+     
             cursor.execute(f"TRUNCATE TABLE {tabla_real}")
             conn.commit()
            
