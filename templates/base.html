@@ -10,18 +10,28 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+  <style>
+    .logo-svg {
+      height: 56px;
+      width: auto;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- ✅ NAVBAR CON LOGO CENTRADO -->
+<!-- ✅ NAVBAR CON LOGO SVG INLINE -->
 <nav class="navbar navbar-dark bg-dark">
   <div class="container-fluid justify-content-center py-1">
     <a href="/" class="navbar-brand d-flex flex-column align-items-center">
-      <img id="sat-logo"
-           src="{{ url_for('static', filename='img/sat-logo-dark.svg') }}"
-           alt="SAT Dashboard"
-           height="56">
+
+      <!-- SVG INLINE (oscuro por defecto) -->
+      <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" id="satLogo">
+        <rect width="64" height="64" rx="10" fill="#1C1C1C"/>
+        <path d="M20 20h24v4H20zM20 30h24v4H20zM20 40h24v4H20z" fill="#00AEEF"/>
+      </svg>
+
       <span class="text-white fw-bold fs-5">SAT Dashboard</span>
     </a>
   </div>
@@ -43,7 +53,6 @@
     <a class="menu-link" href="/carga_masiva">Consulta RFCs</a>
     <a class="menu-link" href="/historial_cargas">Historial</a>
 
-    <!-- Toggle animado -->
     <label class="theme-switch">
       <input type="checkbox" id="themeToggle">
       <span class="slider"></span>
@@ -61,13 +70,14 @@
   Sistema SAT © {{ now.year }} — Desarrollado para uso interno
 </footer>
 
-<!-- ✅ Bootstrap JS -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- ✅ TOGGLE DARK MODE -->
+<!-- ✅ MODO OSCURO + CAMBIO DE LOGO INLINE -->
 <script>
   window.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('themeToggle');
+    const logo = document.getElementById('satLogo');
 
     function loadDarkCSS() {
       if (!document.getElementById('darkCSS')) {
@@ -86,41 +96,36 @@
 
     const savedTheme = localStorage.getItem('theme') || 'light';
 
-    if (savedTheme === 'dark') {
-      document.body.classList.add('dark-mode');
-      toggle.checked = true;
-      loadDarkCSS();
-    } else {
-      document.body.classList.remove('dark-mode');
-      toggle.checked = false;
-      removeDarkCSS();
-    }
-
-    toggle.addEventListener('change', () => {
-      if (toggle.checked) {
+    function applyTheme(theme) {
+      if (theme === 'dark') {
         document.body.classList.add('dark-mode');
-        localStorage.setItem('theme', 'dark');
         loadDarkCSS();
+        if (logo) {
+          logo.querySelector('rect').setAttribute('fill', '#ffffff');
+          logo.querySelector('path').setAttribute('fill', '#00AEEF');
+        }
       } else {
         document.body.classList.remove('dark-mode');
-        localStorage.setItem('theme', 'light');
         removeDarkCSS();
+        if (logo) {
+          logo.querySelector('rect').setAttribute('fill', '#1C1C1C');
+          logo.querySelector('path').setAttribute('fill', '#00AEEF');
+        }
       }
-    });
-
-    // ✅ CAMBIO DE LOGO SEGÚN TEMA
-    const logo = document.getElementById('sat-logo');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (logo) {
-      logo.src = prefersDark
-        ? "{{ url_for('static', filename='img/sat-logo-dark.svg') }}"
-        : "{{ url_for('static', filename='img/sat-logo-light.svg') }}";
     }
+
+    applyTheme(savedTheme);
+
+    toggle.checked = savedTheme === 'dark';
+
+    toggle.addEventListener('change', () => {
+      const newTheme = toggle.checked ? 'dark' : 'light';
+      localStorage.setItem('theme', newTheme);
+      applyTheme(newTheme);
+    });
   });
 </script>
 
-<!-- ✅ BLOQUE PARA SCRIPTS DE CADA VISTA -->
 {% block scripts %}{% endblock %}
 
 </body>
