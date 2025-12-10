@@ -577,12 +577,12 @@ def historial_cargas():
 # ---------------------------------------------------------
 # CARGA MASIVA TXT
 # ---------------------------------------------------------
-
 @app.route('/carga_masiva', methods=['GET', 'POST'])
 def carga_masiva():
     if request.method == 'POST':
         archivo = request.files.get('archivo')
-        nombre_reporte = request.form.get('nombre_reporte', 'reporte')
+        nombre_reporte = request.form.get('nombre_reporte', 'reporte_rfc')
+        ruta_destino = request.form.get('ruta_destino', 'static/descargas')
 
         if not archivo or archivo.filename == '':
             flash(('danger', 'No seleccionaste ningún archivo'))
@@ -592,7 +592,27 @@ def carga_masiva():
             contenido = archivo.read().decode('latin1').splitlines()
             rfcs = [line.strip().upper() for line in contenido if line.strip()]
 
-            flash(('success', f'Se procesaron {len(rfcs)} RFCs correctamente'))
+            # Crear carpeta si no existe
+            os.makedirs(ruta_destino, exist_ok=True)
+
+            # Nombre final del archivo
+            nombre_final = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            ruta_completa = os.path.join(ruta_destino, nombre_final)
+
+            # Guardar archivo generado
+            with open(ruta_completa, 'w', encoding='utf-8') as f:
+                for rfc in rfcs:
+                    f.write(rfc + '\n')
+
+            # Mostrar botón de descarga
+            enlace = f"/{ruta_completa}"
+
+            flash((
+                'success',
+                f'Se procesaron {len(rfcs)} RFCs. '
+                f'<a href="{enlace}" download class="btn btn-success btn-sm ms-2">Descargar archivo</a>'
+            ))
+
             return redirect('/carga_masiva')
 
         except Exception as e:
@@ -600,3 +620,4 @@ def carga_masiva():
             return redirect('/carga_masiva')
 
     return render_template('carga_masiva.html')
+
