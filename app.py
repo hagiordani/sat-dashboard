@@ -1,3 +1,39 @@
+#!/usr/bin/env python3
+"""
+Sistema SAT - Interfaz Web (Flask)
+Versión limpia, sin duplicados, lista para producción.
+"""
+
+from flask import Flask, render_template, request, jsonify, flash, redirect, send_file
+from config import DB_CONFIG
+import mysql.connector
+from datetime import datetime
+import pandas as pd
+import os
+import io
+import csv
+import traceback
+import json
+
+from werkzeug.utils import secure_filename
+
+# ---------------------------------------------------------
+# CONFIGURACIÓN GENERAL
+# ---------------------------------------------------------
+
+app = Flask(__name__)
+app.secret_key = 'sat_secret_key_2024'
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'txt'}
+
+# ---------------------------------------------------------
+# UTILIDADES
+# ---------------------------------------------------------
+
 # ---------------------------------------------------------
 # CARGA CSV
 # ---------------------------------------------------------
@@ -7,13 +43,9 @@ def carga_csv():
     import dateutil.parser
 
     def convertir_fecha(valor):
-        """
-        Convierte cualquier fecha del SAT a formato MySQL YYYY-MM-DD.
-        Si no se puede convertir, regresa None.
-        """
+        """Convierte cualquier fecha del SAT a formato MySQL YYYY-MM-DD."""
         if not valor or str(valor).strip() == "" or str(valor).lower() in ["nan", "null", "-", "--", "—"]:
             return None
-
         try:
             valor = str(valor).replace("\n", " ").strip()
             fecha = dateutil.parser.parse(valor, dayfirst=True, fuzzy=True)
