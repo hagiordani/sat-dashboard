@@ -255,21 +255,13 @@ def api_contribuyente(rfc):
         conn.close()
         return jsonify({'error': str(e)}), 500
 
+
 # ---------------------------------------------------------
 # ESTADÍSTICAS DETALLADAS
 # ---------------------------------------------------------
 
 @app.route('/estadisticas')
 def estadisticas():
-    texto_legal = """
-        Información actualizada al 31 de octubre de 2025; los listados a que se hace mención, son de carácter público, y pueden ser consultados en el Portal del Servicio de Administración Tributaria https://www.gob.mx/sat -acciones y programas- rubro General, NOTIFICACIÓN A CONTRIBUYENTES CON OPERACIONES PRESUNTAMENTE INEXISTENTES Y LISTADOS DEFINITIVOS- https://www.gob.mx/sat/acciones-y-programas/notificacion-a-contribuyentes-con-operaciones-presuntamente-inexistentes-y-listados-definitivos-333336, mismos que, al encontrarse firmados mediante firma electrónica (SIFEN), cuentan con el carácter de original, de conformidad con lo establecido en los artículos 38, párrafos primero fracción V, tercero, cuarto, quinto y sexto, y 17-D párrafos tercero y décimo del Código Fiscal de la Federación.
-        Listado completo de contribuyentes (Artículo 69-B del CFF)
-
-    # ✅ Obtener texto legal por tabla
-    cursor.execute("SELECT tabla, linea1, linea2 FROM Texto_Legal_Tablas")
-    textos_legales = cursor.fetchall()
-    """
-
     conn = get_db_connection()
     if not conn:
         return "Error de conexión a la base de datos", 500
@@ -279,13 +271,20 @@ def estadisticas():
     try:
         tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
 
-        # Totales
+        # ✅ Obtener texto legal por tabla (si existe la tabla)
+        try:
+            cursor.execute("SELECT tabla, linea1, linea2 FROM Texto_Legal_Tablas")
+            textos_legales = cursor.fetchall()
+        except:
+            textos_legales = []  # ✅ Evita error si la tabla aún no existe
+
+        # ✅ Totales
         stats = {}
         for tabla in tablas:
             cursor.execute(f"SELECT COUNT(*) AS total FROM {tabla}")
             stats[tabla] = cursor.fetchone()['total']
 
-        # Duplicados
+        # ✅ Duplicados
         duplicates = {}
         for tabla in tablas:
             cursor.execute(f"""
@@ -300,7 +299,7 @@ def estadisticas():
             """)
             duplicates[tabla] = cursor.fetchone()['duplicate_count']
 
-        # Situaciones
+        # ✅ Situaciones
         cursor.execute("""
             SELECT situacion_contribuyente, COUNT(*) AS count
             FROM Listado_Completo_69_B
@@ -309,7 +308,7 @@ def estadisticas():
         """)
         situaciones = cursor.fetchall()
 
-        # Actualizaciones
+        # ✅ Actualizaciones
         cursor.execute("""
             SELECT 
                 table_name,
@@ -329,7 +328,7 @@ def estadisticas():
 
         cursor.close()
         conn.close()
-        
+
         return render_template(
             'estadisticas.html',
             stats=stats,
@@ -338,8 +337,6 @@ def estadisticas():
             actualizaciones=actualizaciones,
             textos_legales=textos_legales
         )
-
-
 
     except Exception as e:
         cursor.close()
