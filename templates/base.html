@@ -20,13 +20,18 @@
 
 <!-- ✅ NAVBAR CON LOGO CENTRADO -->
 <nav class="navbar navbar-dark bg-dark">
-  <div class="container-fluid justify-content-center py-2">
+  <div class="container-fluid justify-content-center py-0">
     <a href="/" class="navbar-brand d-flex flex-column align-items-center">
-      <img id="sat-logo" src="/static/img/sat-logo-dark.svg" alt="SAT Dashboard" height="72" class="mb-1">
+      <img id="sat-logo"
+           src="{{ url_for('static', filename='img/sat-logo-dark.svg') }}"
+           alt="SAT Dashboard"
+           height="60"
+           class="mb-1">
       <span class="text-white fw-bold fs-5">SAT Dashboard</span>
     </a>
   </div>
 </nav>
+
 
 <!-- ✅ TOP BAR NUEVA -->
 <div class="topbar d-flex align-items-center justify-content-between px-4 shadow-sm">
@@ -117,10 +122,11 @@
 
   if (logo) {
     logo.src = prefersDark
-      ? '/static/img/sat-logo-dark.svg'
-      : '/static/img/sat-logo-light.svg';
+      ? "{{ url_for('static', filename='img/sat-logo-dark.svg') }}"
+      : "{{ url_for('static', filename='img/sat-logo-light.svg') }}";
   }
 </script>
+
 
 <!-- ✅ BLOQUE PARA SCRIPTS DE CADA VISTA -->
 {% block scripts %}{% endblock %}
