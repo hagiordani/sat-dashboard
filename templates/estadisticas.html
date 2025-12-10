@@ -58,4 +58,17 @@
   <p style="white-space: pre-line;">{{ texto_legal }}</p>
 </div>
 
+<h3 class="mt-4">Información legal por tabla</h3>
+
+{% for t in textos_legales %}
+<div class="alert alert-secondary mt-3">
+  <h5 class="fw-bold">{{ t.tabla }}</h5>
+  <p style="white-space: pre-line;">
+    {{ t.linea1 }}
+    
+    {{ t.linea2 }}
+  </p>
+</div>
+{% endfor %}
+
 {% endblock %}
