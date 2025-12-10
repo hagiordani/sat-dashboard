@@ -1,495 +1,3 @@
-#!/usr/bin/env python3
-"""
-Sistema SAT - Interfaz Web (Flask)
-Versión limpia, sin duplicados, lista para producción.
-"""
-
-from flask import Flask, render_template, request, jsonify, flash, redirect, send_file
-from config import DB_CONFIG
-import mysql.connector
-from datetime import datetime
-import pandas as pd
-import os
-import io
-import csv
-import traceback
-import json
-
-from werkzeug.utils import secure_filename
-
-# ---------------------------------------------------------
-# CONFIGURACIÓN GENERAL
-# ---------------------------------------------------------
-
-app = Flask(__name__)
-app.secret_key = 'sat_secret_key_2024'
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
-
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-ALLOWED_EXTENSIONS = {'txt'}
-
-# ---------------------------------------------------------
-# UTILIDADES
-# ---------------------------------------------------------
-
-@app.route("/")
-def index():
-    conn = get_db_connection()
-    if not conn:
-        return "Error de conexión a la base de datos", 500
-
-    cursor = conn.cursor(dictionary=True)
-
-    try:
-        tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
-
-        # ============================
-        # 1. Total de registros por tabla (para gráfica de barras)
-        # ============================
-        registros_por_tabla = {}
-        for tabla in tablas:
-            cursor.execute(f"SELECT COUNT(*) AS count FROM {tabla}")
-            registros_por_tabla[tabla] = cursor.fetchone()['count']
-
-        tablas_json = {
-            "labels": list(registros_por_tabla.keys()),
-            "values": list(registros_por_tabla.values())
-        }
-
-        # ============================
-        # 2. Cargas por día (para gráfica de líneas)
-        # ============================
-        cursor.execute("""
-            SELECT DATE(fecha) AS dia, COUNT(*) AS total
-            FROM Historial_Cargas
-            GROUP BY DATE(fecha)
-            ORDER BY dia DESC
-            LIMIT 7
-        """)
-        cargas = cursor.fetchall()
-
-        cargas_dias_json = {
-            "labels": [str(c["dia"]) for c in cargas][::-1],
-            "values": [c["total"] for c in cargas][::-1]
-        }
-
-        # ============================
-        # 3. Situaciones (para gráfica de pastel)
-        # ============================
-        cursor.execute("""
-            SELECT situacion_contribuyente AS situacion, COUNT(*) AS total
-            FROM Listado_Completo_69_B
-            GROUP BY situacion_contribuyente
-            ORDER BY total DESC
-        """)
-        situaciones = cursor.fetchall()
-
-        estados_json = {
-            "labels": [s["situacion"] for s in situaciones],
-            "values": [s["total"] for s in situaciones]
-        }
-
-        # ============================
-        # 4. Estadísticas generales
-        # ============================
-        total_registros = sum(registros_por_tabla.values())
-        total_tablas = len(tablas)
-
-        cursor.execute("SELECT fecha FROM Historial_Cargas ORDER BY fecha DESC LIMIT 1")
-        ultima = cursor.fetchone()
-        ultima_carga = ultima["fecha"] if ultima else "N/A"
-
-        cursor.execute("""
-            SELECT COUNT(*) AS total
-            FROM Historial_Cargas
-            WHERE DATE(fecha) = CURDATE()
-        """)
-        procesados_hoy = cursor.fetchone()["total"]
-
-        cursor.close()
-        conn.close()
-
-        # ============================
-        # Renderizar dashboard
-        # ============================
-        return render_template(
-            "index.html",
-            total_registros=total_registros,
-            total_tablas=total_tablas,
-            ultima_carga=ultima_carga,
-            procesados_hoy=procesados_hoy,
-            tablas_json=json.dumps(tablas_json),
-            cargas_dias_json=json.dumps(cargas_dias_json),
-            estados_json=json.dumps(estados_json)
-        )
-
-    except Exception as e:
-        cursor.close()
-        conn.close()
-        return f"Error: {e}", 500
-
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def get_db_connection():
-    try:
-        return mysql.connector.connect(**DB_CONFIG)
-    except mysql.connector.Error as e:
-        print(f"Error de base de datos: {e}")
-        return None
-
-@app.context_processor
-def inject_now():
-    return {'now': datetime.now(), 'app_name': 'Sistema SAT'}
-
-def buscar_rfc_en_tablas(rfc, cursor):
-    tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
-    encontradas = []
-
-    for tabla in tablas:
-        try:
-            cursor.execute(f"SELECT COUNT(*) AS count FROM {tabla} WHERE UPPER(rfc) = %s", (rfc.upper(),))
-            if cursor.fetchone()['count'] > 0:
-                encontradas.append(tabla)
-        except:
-            pass
-
-    return encontradas
-
-# ---------------------------------------------------------
-# DASHBOARD PRINCIPAL
-# ---------------------------------------------------------
-
-
-# ---------------------------------------------------------
-# BÚSQUEDA
-# ---------------------------------------------------------
-
-@app.route('/search')
-def search():
-    query = request.args.get('q', '').strip()
-    search_type = request.args.get('type', 'rfc')
-
-    if not query:
-        return render_template('search.html', results=[], query='', search_type=search_type)
-
-    query = query.upper()  # Normalizamos a mayúsculas
-
-    conn = get_db_connection()
-    if not conn:
-        return "Error de conexión a la base de datos", 500
-
-    cursor = conn.cursor(dictionary=True)
-
-    try:
-        results = []
-        tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
-
-        if search_type == 'rfc':
-            for tabla in tablas:
-                cursor.execute(f"""
-                    SELECT *, '{tabla}' AS tabla_origen
-                    FROM {tabla}
-                    WHERE UPPER(rfc) = %s
-                    ORDER BY numero
-                """, (query,))
-                results.extend(cursor.fetchall())
-
-        else:  # búsqueda por nombre en mayúsculas
-            for tabla in tablas:
-                cursor.execute(f"""
-                    SELECT *, '{tabla}' AS tabla_origen
-                    FROM {tabla}
-                    WHERE UPPER(nombre_contribuyente) LIKE %s
-                    ORDER BY numero
-                    LIMIT 100
-                """, (f"%{query}%",))
-                results.extend(cursor.fetchall())
-
-        cursor.close()
-        conn.close()
-
-        return render_template(
-            'search.html',
-            results=results,
-            query=query,
-            search_type=search_type,
-            results_count=len(results)
-        )
-
-    except Exception as e:
-        cursor.close()
-        conn.close()
-        return f"Error: {e}", 500
-
-# ---------------------------------------------------------
-# API RFC
-# ---------------------------------------------------------
-
-@app.route('/api/contribuyente/<rfc>')
-def api_contribuyente(rfc):
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-
-    cursor = conn.cursor(dictionary=True)
-    tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
-    results = []
-
-    try:
-        for tabla in tablas:
-            cursor.execute(f"SELECT * FROM {tabla} WHERE UPPER(rfc) = %s", (rfc.upper(),))
-            for row in cursor.fetchall():
-                row['tabla_origen'] = tabla
-                results.append(row)
-
-        cursor.close()
-        conn.close()
-        return jsonify(results)
-
-    except Exception as e:
-        cursor.close()
-        conn.close()
-        return jsonify({'error': str(e)}), 500
-
-
-# ---------------------------------------------------------
-# ESTADÍSTICAS DETALLADAS
-# ---------------------------------------------------------
-
-@app.route('/estadisticas')
-def estadisticas():
-    conn = get_db_connection()
-    if not conn:
-        return "Error de conexión a la base de datos", 500
-
-    cursor = conn.cursor(dictionary=True)
-
-    try:
-        tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
-
-        # ✅ Obtener texto legal por tabla (si existe la tabla)
-        try:
-            cursor.execute("SELECT tabla, linea1, linea2 FROM Texto_Legal_Tablas")
-            textos_legales = cursor.fetchall()
-        except:
-            textos_legales = []  # ✅ Evita error si la tabla aún no existe
-
-        # ✅ Totales
-        stats = {}
-        for tabla in tablas:
-            cursor.execute(f"SELECT COUNT(*) AS total FROM {tabla}")
-            stats[tabla] = cursor.fetchone()['total']
-
-        # ✅ Duplicados
-        duplicates = {}
-        for tabla in tablas:
-            cursor.execute(f"""
-                SELECT COUNT(*) AS duplicate_count
-                FROM (
-                    SELECT rfc, COUNT(*) AS count
-                    FROM {tabla}
-                    WHERE rfc IS NOT NULL
-                    GROUP BY rfc
-                    HAVING COUNT(*) > 1
-                ) AS dups
-            """)
-            duplicates[tabla] = cursor.fetchone()['duplicate_count']
-
-        # ✅ Situaciones
-        cursor.execute("""
-            SELECT situacion_contribuyente, COUNT(*) AS count
-            FROM Listado_Completo_69_B
-            GROUP BY situacion_contribuyente
-            ORDER BY count DESC
-        """)
-        situaciones = cursor.fetchall()
-
-        # ✅ Actualizaciones
-        cursor.execute("""
-            SELECT 
-                table_name,
-                MAX(fecha_actualizacion) AS ultima_actualizacion,
-                COUNT(*) AS total_registros
-            FROM (
-                SELECT 'Definitivos' AS table_name, fecha_actualizacion FROM Definitivos
-                UNION ALL SELECT 'Desvirtuados', fecha_actualizacion FROM Desvirtuados
-                UNION ALL SELECT 'Presuntos', fecha_actualizacion FROM Presuntos
-                UNION ALL SELECT 'SentenciasFavorables', fecha_actualizacion FROM SentenciasFavorables
-                UNION ALL SELECT 'Listado_Completo_69_B', fecha_actualizacion FROM Listado_Completo_69_B
-            ) AS all_tables
-            GROUP BY table_name
-            ORDER BY table_name
-        """)
-        actualizaciones = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-
-        return render_template(
-            'estadisticas.html',
-            stats=stats,
-            duplicates=duplicates,
-            situaciones=situaciones,
-            actualizaciones=actualizaciones,
-            textos_legales=textos_legales
-        )
-
-    except Exception as e:
-        cursor.close()
-        conn.close()
-        return f"Error: {e}", 500
-
-# ---------------------------------------------------------
-# TABLAS
-# ---------------------------------------------------------
-
-@app.route('/tablas')
-def tablas():
-    tablas_info = [
-        {'nombre': 'Definitivos', 'ruta': 'definitivos', 'descripcion': 'Contribuyentes con situación definitiva'},
-        {'nombre': 'Desvirtuados', 'ruta': 'desvirtuados', 'descripcion': 'Contribuyentes desvirtuados'},
-        {'nombre': 'Presuntos', 'ruta': 'presuntos', 'descripcion': 'Contribuyentes presuntos'},
-        {'nombre': 'Sentencias Favorables', 'ruta': 'sentenciasfavorables', 'descripcion': 'Sentencias favorables'},
-        {'nombre': 'Listado Completo 69-B', 'ruta': 'listado_completo_69_b', 'descripcion': 'Listado completo del artículo 69-B'}
-    ]
-    return render_template('tablas.html', tablas=tablas_info)
-
-@app.route('/tabla/<nombre_tabla>')
-def ver_tabla(nombre_tabla):
-    conn = get_db_connection()
-    if not conn:
-        return "Error de conexión a la base de datos", 500
-
-    cursor = conn.cursor(dictionary=True)
-
-    try:
-        tablas_validas = {
-            'definitivos': 'Definitivos',
-            'desvirtuados': 'Desvirtuados',
-            'presuntos': 'Presuntos',
-            'sentenciasfavorables': 'SentenciasFavorables',
-            'listado_completo_69_b': 'Listado_Completo_69_B'
-        }
-
-        tabla_real = tablas_validas.get(nombre_tabla.lower())
-        if not tabla_real:
-            return "Tabla no válida", 400
-
-        page = request.args.get('page', 1, type=int)
-        per_page = 50
-        offset = (page - 1) * per_page
-
-        cursor.execute(f"SELECT COUNT(*) AS total FROM {tabla_real}")
-        total = cursor.fetchone()['total']
-
-        cursor.execute(f"""
-            SELECT * FROM {tabla_real}
-            ORDER BY numero
-            LIMIT %s OFFSET %s
-        """, (per_page, offset))
-        registros = cursor.fetchall()
-
-        cursor.execute(f"DESCRIBE {tabla_real}")
-        columnas = [col['Field'] for col in cursor.fetchall()]
-
-        # ✅ Obtener texto legal correspondiente a esta tabla
-        cursor.execute("""
-            SELECT linea1, linea2 
-            FROM Texto_Legal_Tablas 
-            WHERE tabla = %s 
-            ORDER BY id DESC 
-            LIMIT 1
-        """, (tabla_real,))
-        texto_legal = cursor.fetchone()
-
-        total_pages = (total + per_page - 1) // per_page
-
-        tabla_info = {
-            'definitivos': {'nombre': 'Definitivos', 'descripcion': 'Contribuyentes con situación definitiva'},
-            'desvirtuados': {'nombre': 'Desvirtuados', 'descripcion': 'Contribuyentes desvirtuados'},
-            'presuntos': {'nombre': 'Presuntos', 'descripcion': 'Contribuyentes presuntos'},
-            'sentenciasfavorables': {'nombre': 'Sentencias Favorables', 'descripcion': 'Sentencias favorables'},
-            'listado_completo_69_b': {'nombre': 'Listado Completo 69-B', 'descripcion': 'Listado completo del artículo 69-B'}
-        }.get(nombre_tabla.lower())
-
-        cursor.close()
-        conn.close()
-
-        return render_template(
-            'tabla_detalle.html',
-            tabla=tabla_real,
-            tabla_info=tabla_info,
-            registros=registros,
-            columnas=columnas,
-            page=page,
-            total_pages=total_pages,
-            total=total,
-            texto_legal=texto_legal
-        )
-
-    except Exception as e:
-        cursor.close()
-        conn.close()
-        return f"Error: {e}", 500
-
-# ---------------------------------------------------------
-# EXPORTAR CSV
-# ---------------------------------------------------------
-
-@app.route('/exportar/<nombre_tabla>')
-def exportar_tabla(nombre_tabla):
-    conn = get_db_connection()
-    if not conn:
-        return "Error de conexión a la base de datos", 500
-
-    cursor = conn.cursor(dictionary=True)
-
-    try:
-        tablas_validas = {
-            'definitivos': 'Definitivos',
-            'desvirtuados': 'Desvirtuados',
-            'presuntos': 'Presuntos',
-            'sentenciasfavorables': 'SentenciasFavorables',
-            'listado_completo_69_b': 'Listado_Completo_69_B'
-        }
-
-        tabla_real = tablas_validas.get(nombre_tabla.lower())
-        if tabla_real is None:
-            return "Tabla no válida", 400
-
-        cursor.execute(f"SELECT * FROM {tabla_real} ORDER BY numero")
-        registros = cursor.fetchall()
-
-        output = io.StringIO()
-        writer = csv.writer(output)
-
-        if registros:
-            writer.writerow(registros[0].keys())
-
-        for registro in registros:
-            writer.writerow(registro.values())
-
-        output.seek(0)
-
-        cursor.close()
-        conn.close()
-
-        return send_file(
-            io.BytesIO(output.getvalue().encode('utf-8')),
-            mimetype="text/csv",
-            as_attachment=True,
-            download_name=f"{tabla_real}_{datetime.now().strftime('%Y%m%d')}.csv"
-        )
-
-    except Exception as e:
-        cursor.close()
-        conn.close()
-        return f"Error: {e}", 500
-
 # ---------------------------------------------------------
 # CARGA CSV
 # ---------------------------------------------------------
@@ -498,28 +6,26 @@ def carga_csv():
 
     import dateutil.parser
 
-def convertir_fecha(valor):
-    """
-    Convierte cualquier fecha del SAT a formato MySQL YYYY-MM-DD.
-    Si no se puede convertir, regresa None.
-    """
-    if not valor or str(valor).strip() == "" or str(valor).lower() in ["nan", "null", "-", "--", "—"]:
-        return None
+    def convertir_fecha(valor):
+        """
+        Convierte cualquier fecha del SAT a formato MySQL YYYY-MM-DD.
+        Si no se puede convertir, regresa None.
+        """
+        if not valor or str(valor).strip() == "" or str(valor).lower() in ["nan", "null", "-", "--", "—"]:
+            return None
 
-    try:
-        # Normalizar texto
-        valor = str(valor).replace("\n", " ").strip()
-
-        # Intentar conversión automática
-        fecha = dateutil.parser.parse(valor, dayfirst=True, fuzzy=True)
-        return fecha.strftime("%Y-%m-%d")
-
-    except Exception:
-        return None
+        try:
+            valor = str(valor).replace("\n", " ").strip()
+            fecha = dateutil.parser.parse(valor, dayfirst=True, fuzzy=True)
+            return fecha.strftime("%Y-%m-%d")
+        except Exception:
+            return None
 
     if request.method == 'POST':
 
+        # ============================
         # Validación inicial del archivo
+        # ============================
         if 'archivo' not in request.files:
             flash('No se seleccionó ningún archivo', 'danger')
             return redirect(request.url)
@@ -534,6 +40,9 @@ def convertir_fecha(valor):
             flash('Solo se permiten archivos CSV', 'danger')
             return redirect(request.url)
 
+        # ============================
+        # Validación de tabla destino
+        # ============================
         tabla = request.form.get('tabla')
         tablas_validas = {
             'definitivos': 'Definitivos',
@@ -552,9 +61,18 @@ def convertir_fecha(valor):
         cursor = None
 
         try:
-            # ✅ Leer encabezados reales desde línea 3
+            # ============================
+            # Leer CSV (encabezados en línea 3)
+            # ============================
             df = pd.read_csv(archivo, header=2)
 
+            if df.empty:
+                flash('El archivo CSV está vacío', 'danger')
+                return redirect(request.url)
+
+            # ============================
+            # Mapeos por tabla
+            # ============================
             mapeo_definitivos = {
                 "No.": "numero",
                 "RFC": "rfc",
@@ -577,7 +95,7 @@ def convertir_fecha(valor):
                 "Número y fecha de oficio global de sentencia favorable DOF": "oficio_sentencia_dof",
                 "Publicación DOF sentencia favorable": "publicacion_dof_sentencia"
             }
-            
+
             mapeo_presuntos = {
                 "No.": "numero",
                 "RFC": "rfc",
@@ -588,7 +106,7 @@ def convertir_fecha(valor):
                 "Número y fecha de oficio global de presunción DOF": "oficio_presuncion_dof",
                 "Publicación DOF presuntos": "publicacion_dof_presuntos"
             }
-            
+
             mapeo_desvirtuados = {
                 "No.": "numero",
                 "RFC": "rfc",
@@ -599,7 +117,7 @@ def convertir_fecha(valor):
                 "Número y fecha de oficio global de contribuyentes que desvirtuaron DOF": "oficio_desvirtuado_dof",
                 "Publicación DOF desvirtuados": "publicacion_dof_desvirtuados"
             }
-            
+
             mapeo_sentencias = {
                 "No.": "numero",
                 "RFC": "rfc",
@@ -610,7 +128,7 @@ def convertir_fecha(valor):
                 "Número y fecha de oficio global de sentencia favorable DOF": "oficio_sentencia_dof",
                 "Publicación DOF sentencia favorable": "publicacion_dof_sentencia"
             }
-            
+
             mapeo_listado_completo = {
                 "No.": "numero",
                 "RFC": "rfc",
@@ -633,8 +151,23 @@ def convertir_fecha(valor):
                 "Número y fecha de oficio global de sentencia favorable DOF": "oficio_sentencia_dof",
                 "Publicación DOF sentencia favorable": "publicacion_dof_sentencia"
             }
-            
-            # ✅ Detectar columnas que son fechas en MySQL
+
+            mapeos = {
+                "Definitivos": mapeo_definitivos,
+                "Presuntos": mapeo_presuntos,
+                "Desvirtuados": mapeo_desvirtuados,
+                "SentenciasFavorables": mapeo_sentencias,
+                "Listado_Completo_69_B": mapeo_listado_completo
+            }
+
+            # ============================
+            # Renombrar columnas según tabla
+            # ============================
+            df.rename(columns=mapeos.get(tabla_real, {}), inplace=True)
+
+            # ============================
+            # Conversión automática de fechas
+            # ============================
             columnas_fecha = [
                 "publicacion_sat_presuntos",
                 "publicacion_dof_presuntos",
@@ -646,40 +179,25 @@ def convertir_fecha(valor):
                 "publicacion_dof_sentencia",
                 "fecha_actualizacion"
             ]
-            
-            # ✅ Convertir fechas automáticamente
+
             for col in columnas_fecha:
                 if col in df.columns:
                     df[col] = df[col].apply(convertir_fecha)
-                        
-                        
 
-
-            
-            
-            mapeo = mapeos.get(tabla_real, {})
-            
-            # ✅ Renombrar columnas automáticamente
-            df.rename(columns=mapeo, inplace=True)
-
-
-
-            
-            if df.empty:
-                flash('El archivo CSV está vacío', 'danger')
-                return redirect(request.url)
-
-            # ✅ Conexión segura
+            # ============================
+            # Conexión segura
+            # ============================
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
-            # ✅ Leer texto legal (líneas 1 y 2)
+            # ============================
+            # Leer texto legal (líneas 1 y 2)
+            # ============================
             archivo.stream.seek(0)
             lineas = archivo.stream.read().decode('latin1').splitlines()
             linea1 = lineas[0] if len(lineas) > 0 else ""
             linea2 = lineas[1] if len(lineas) > 1 else ""
 
-            # ✅ Guardar texto legal por tabla
             cursor.execute("DELETE FROM Texto_Legal_Tablas WHERE tabla = %s", (tabla_real,))
             cursor.execute("""
                 INSERT INTO Texto_Legal_Tablas (tabla, linea1, linea2)
@@ -687,7 +205,9 @@ def convertir_fecha(valor):
             """, (tabla_real, linea1, linea2))
             conn.commit()
 
-            # ✅ Validar columnas ANTES de borrar nada
+            # ============================
+            # Validar columnas ANTES de borrar nada
+            # ============================
             cursor.execute(f"DESCRIBE {tabla_real}")
             columnas_tabla = [col['Field'] for col in cursor.fetchall()]
 
@@ -697,7 +217,9 @@ def convertir_fecha(valor):
                 flash('El CSV no contiene columnas válidas para esta tabla. No se realizaron cambios.', 'danger')
                 return redirect(request.url)
 
-            # ✅ Crear backup
+            # ============================
+            # Crear backup
+            # ============================
             fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
             tabla_backup = f"{tabla_real}_backup_{fecha}"
 
@@ -706,11 +228,15 @@ def convertir_fecha(valor):
 
             flash(f"✅ Backup creado correctamente: <strong>{tabla_backup}</strong>", "info")
 
-            # ✅ Vaciar tabla original
+            # ============================
+            # Vaciar tabla original
+            # ============================
             cursor.execute(f"TRUNCATE TABLE {tabla_real}")
             conn.commit()
 
-            # ✅ Insertar datos nuevos
+            # ============================
+            # Insertar datos nuevos
+            # ============================
             df = df[columnas_validas]
             df = df.where(pd.notnull(df), None)
 
@@ -724,7 +250,9 @@ def convertir_fecha(valor):
 
             total = cursor.rowcount
 
-            # ✅ Registrar en historial
+            # ============================
+            # Registrar en historial
+            # ============================
             cursor.execute("""
                 INSERT INTO Historial_Cargas (nombre_archivo, tabla, registros)
                 VALUES (%s, %s, %s)
@@ -744,7 +272,6 @@ def convertir_fecha(valor):
             return redirect(request.url)
 
         finally:
-            # ✅ Cierre seguro
             try:
                 if cursor:
                     cursor.close()
@@ -754,157 +281,3 @@ def convertir_fecha(valor):
                 pass
 
     return render_template('carga_csv.html')
-
-
-# ---------------------------------------------------------
-# HISTORIAL DE CARGAS
-# ---------------------------------------------------------
-
-@app.route('/historial_cargas')
-def historial_cargas():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM Historial_Cargas ORDER BY fecha DESC LIMIT 200")
-    cargas = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
-
-    return render_template('historial_cargas.html', cargas=cargas)
-
-# ---------------------------------------------------------
-# CARGA MASIVA TXT
-# ---------------------------------------------------------
-@app.route('/descargar_csv', methods=['POST'])
-def descargar_csv():
-    archivo = request.files.get('archivo')
-
-    if not archivo or archivo.filename == '':
-        flash('No seleccionaste ningún archivo', 'danger')
-        return redirect('/carga_masiva')
-
-    try:
-        contenido = archivo.read().decode('latin1').splitlines()
-        rfcs = [line.strip().upper() for line in contenido if line.strip()]
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
-        resultados = []
-
-        for rfc in rfcs:
-            encontrado = ''
-            for tabla in tablas:
-                cursor.execute(f"SELECT COUNT(*) AS total FROM {tabla} WHERE UPPER(rfc) = %s", (rfc,))
-                if cursor.fetchone()['total'] > 0:
-                    encontrado = tabla
-                    break
-            resultados.append([rfc, encontrado])
-
-        cursor.close()
-        conn.close()
-
-        # Generar CSV en memoria
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(["Procesado", "Encontrado en"])
-        writer.writerows(resultados)
-        output.seek(0)
-
-        return send_file(
-            io.BytesIO(output.getvalue().encode('utf-8')),
-            mimetype='text/csv',
-            as_attachment=True,
-            download_name='resultado_rfc.csv'
-        )
-
-    except Exception as e:
-        flash(f'Error procesando archivo: {e}', 'danger')
-        return redirect('/carga_masiva')
-
-@app.route('/carga_masiva', methods=['GET'])
-def carga_masiva():
-    return render_template('carga_masiva.html')
-
-
-@app.route('/backups')
-def backups():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    # Buscar tablas que sean backups
-    cursor.execute("""
-        SHOW TABLES LIKE '%\_backup\_%'
-    """)
-
-    tablas = [list(row.values())[0] for row in cursor.fetchall()]
-
-    # Separar nombre base y fecha
-    lista = []
-    for t in tablas:
-        partes = t.split("_backup_")
-        tabla_original = partes[0]
-        fecha = partes[1]
-        lista.append({
-            "tabla": t,
-            "original": tabla_original,
-            "fecha": fecha
-        })
-
-    cursor.close()
-    conn.close()
-
-    return render_template("backups.html", backups=lista)
-
-
-@app.route('/restaurar_backup/<tabla_backup>')
-def restaurar_backup(tabla_backup):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Obtener tabla original
-    tabla_original = tabla_backup.split("_backup_")[0]
-
-    try:
-        # Vaciar tabla original
-        cursor.execute(f"TRUNCATE TABLE {tabla_original}")
-
-        # Restaurar datos
-        cursor.execute(f"""
-            INSERT INTO {tabla_original}
-            SELECT * FROM {tabla_backup}
-        """)
-
-        conn.commit()
-
-        flash(f"✅ Backup {tabla_backup} restaurado correctamente en {tabla_original}.", "success")
-
-    except Exception as e:
-        flash(f"Error al restaurar backup: {e}", "danger")
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/backups")
-
-@app.route('/eliminar_backup/<tabla_backup>')
-def eliminar_backup(tabla_backup):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute(f"DROP TABLE {tabla_backup}")
-        conn.commit()
-
-        flash(f"✅ Backup {tabla_backup} eliminado correctamente.", "success")
-
-    except Exception as e:
-        flash(f"Error al eliminar backup: {e}", "danger")
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/backups")
-
