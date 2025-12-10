@@ -625,3 +625,6 @@ def descargar_csv():
         flash(f'Error procesando archivo: {e}', 'danger')
         return redirect('/carga_masiva')
 
+@app.route('/carga_masiva', methods=['GET'])
+def carga_masiva():
+    return render_template('carga_masiva.html')
