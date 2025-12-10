@@ -147,6 +147,7 @@ def index():
         conn.close()
         return f"Error: {e}", 500
 
+
 # ---------------------------------------------------------
 # BÚSQUEDA
 # ---------------------------------------------------------
@@ -208,6 +209,7 @@ def search():
         conn.close()
         return f"Error: {e}", 500
 
+
 # ---------------------------------------------------------
 # API RFC
 # ---------------------------------------------------------
@@ -237,6 +239,7 @@ def api_contribuyente(rfc):
         cursor.close()
         conn.close()
         return jsonify({'error': str(e)}), 500
+
 
 # ---------------------------------------------------------
 # ESTADÍSTICAS DETALLADAS
@@ -320,6 +323,7 @@ def estadisticas():
         conn.close()
         return f"Error: {e}", 500
 
+
 # ---------------------------------------------------------
 # TABLAS
 # ---------------------------------------------------------
@@ -334,6 +338,7 @@ def tablas():
         {'nombre': 'Listado Completo 69-B', 'ruta': 'listado_completo_69_b', 'descripcion': 'Listado completo del artículo 69-B'}
     ]
     return render_template('tablas.html', tablas=tablas_info)
+
 
 @app.route('/tabla/<nombre_tabla>')
 def ver_tabla(nombre_tabla):
@@ -411,7 +416,6 @@ def ver_tabla(nombre_tabla):
         cursor.close()
         conn.close()
         return f"Error: {e}", 500
-
 # ---------------------------------------------------------
 # EXPORTAR CSV
 # ---------------------------------------------------------
@@ -466,8 +470,9 @@ def exportar_tabla(nombre_tabla):
         conn.close()
         return f"Error: {e}", 500
 
+
 # ---------------------------------------------------------
-# ✅ CARGA CSV (VERSIÓN FINAL)
+# ✅ CARGA CSV (VERSIÓN FINAL Y CORREGIDA)
 # ---------------------------------------------------------
 
 @app.route('/carga_csv', methods=['GET', 'POST'])
@@ -485,6 +490,9 @@ def carga_csv():
 
     if request.method == 'POST':
 
+        # ------------------------------
+        # Validación inicial del archivo
+        # ------------------------------
         if 'archivo' not in request.files:
             flash('No se seleccionó ningún archivo', 'danger')
             return redirect(request.url)
@@ -499,6 +507,9 @@ def carga_csv():
             flash('Solo se permiten archivos CSV', 'danger')
             return redirect(request.url)
 
+        # ------------------------------
+        # Validación de tabla destino
+        # ------------------------------
         tabla = request.form.get('tabla')
         tablas_validas = {
             'definitivos': 'Definitivos',
@@ -517,15 +528,18 @@ def carga_csv():
         cursor = None
 
         try:
+            # ------------------------------
+            # Leer CSV (encabezados en línea 3)
+            # ------------------------------
             df = pd.read_csv(archivo, header=2)
 
             if df.empty:
                 flash('El archivo CSV está vacío', 'danger')
                 return redirect(request.url)
 
-            # ============================
+            # ------------------------------
             # Mapeos por tabla
-            # ============================
+            # ------------------------------
             mapeo_definitivos = {
                 "No.": "numero",
                 "RFC": "rfc",
@@ -613,14 +627,14 @@ def carga_csv():
                 "Listado_Completo_69_B": mapeo_listado_completo
             }
 
-            # ============================
+            # ------------------------------
             # Renombrar columnas según tabla
-            # ============================
+            # ------------------------------
             df.rename(columns=mapeos.get(tabla_real, {}), inplace=True)
 
-            # ============================
+            # ------------------------------
             # Conversión automática de fechas
-            # ============================
+            # ------------------------------
             columnas_fecha = [
                 "publicacion_sat_presuntos",
                 "publicacion_dof_presuntos",
@@ -637,15 +651,15 @@ def carga_csv():
                 if col in df.columns:
                     df[col] = df[col].apply(convertir_fecha)
 
-            # ============================
+            # ------------------------------
             # Conexión segura
-            # ============================
+            # ------------------------------
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
-            # ============================
+            # ------------------------------
             # Leer texto legal (líneas 1 y 2)
-            # ============================
+            # ------------------------------
             archivo.stream.seek(0)
             lineas = archivo.stream.read().decode('latin1').splitlines()
             linea1 = lineas[0] if len(lineas) > 0 else ""
@@ -658,9 +672,9 @@ def carga_csv():
             """, (tabla_real, linea1, linea2))
             conn.commit()
 
-            # ============================
+            # ------------------------------
             # Validar columnas ANTES de borrar nada
-            # ============================
+            # ------------------------------
             cursor.execute(f"DESCRIBE {tabla_real}")
             columnas_tabla = [col['Field'] for col in cursor.fetchall()]
 
@@ -670,9 +684,9 @@ def carga_csv():
                 flash('El CSV no contiene columnas válidas para esta tabla. No se realizaron cambios.', 'danger')
                 return redirect(request.url)
 
-            # ============================
+            # ------------------------------
             # Crear backup
-            # ============================
+            # ------------------------------
             fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
             tabla_backup = f"{tabla_real}_backup_{fecha}"
 
@@ -681,15 +695,15 @@ def carga_csv():
 
             flash(f"✅ Backup creado correctamente: <strong>{tabla_backup}</strong>", "info")
 
-            # ============================
+            # ------------------------------
             # Vaciar tabla original
-            # ============================
+            # ------------------------------
             cursor.execute(f"TRUNCATE TABLE {tabla_real}")
             conn.commit()
 
-            # ============================
+            # ------------------------------
             # Insertar datos nuevos
-            # ============================
+            # ------------------------------
             df = df[columnas_validas]
             df = df.where(pd.notnull(df), None)
 
@@ -703,9 +717,9 @@ def carga_csv():
 
             total = cursor.rowcount
 
-            # ============================
+            # ------------------------------
             # Registrar en historial
-            # ============================
+            # ------------------------------
             cursor.execute("""
                 INSERT INTO Historial_Cargas (nombre_archivo, tabla, registros)
                 VALUES (%s, %s, %s)
@@ -734,3 +748,5 @@ def carga_csv():
                 pass
 
     return render_template('carga_csv.html')
+
+
