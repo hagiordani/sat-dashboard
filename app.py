@@ -513,29 +513,29 @@ def carga_csv():
 
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
-
-            # ✅ 1. Crear nombre del backup
+            # ✅ Validar columnas ANTES de borrar nada
+            cursor.execute(f"DESCRIBE {tabla_real}")
+            columnas_tabla = [col['Field'] for col in cursor.fetchall()]
+            
+            columnas_validas = [c for c in df.columns if c in columnas_tabla]
+            
+            if not columnas_validas:
+                flash('El CSV no contiene columnas válidas para esta tabla. No se realizaron cambios.', 'danger')
+                cursor.close()
+                conn.close()
+                return redirect(request.url)
+            
+            # ✅ Si todo está bien → ahora sí crear backup y truncar
             fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
             tabla_backup = f"{tabla_real}_backup_{fecha}"
-
-            # ✅ 2. Crear backup automático
+            
             cursor.execute(f"CREATE TABLE {tabla_backup} AS SELECT * FROM {tabla_real}")
             conn.commit()
-
-            # ✅ 3. Vaciar la tabla original
+            
             cursor.execute(f"TRUNCATE TABLE {tabla_real}")
             conn.commit()
 
-            # ✅ 4. Obtener columnas válidas
-            cursor.execute(f"DESCRIBE {tabla_real}")
-            columnas_tabla = [col['Field'] for col in cursor.fetchall()]
-
-            columnas_validas = [c for c in df.columns if c in columnas_tabla]
-
-            if not columnas_validas:
-                flash('El CSV no contiene columnas válidas para esta tabla', 'danger')
-                return redirect(request.url)
-
+           
             df = df[columnas_validas]
             df = df.where(pd.notnull(df), None)
 
