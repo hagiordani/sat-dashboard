@@ -264,7 +264,11 @@ def estadisticas():
     texto_legal = """
         Información actualizada al 31 de octubre de 2025; los listados a que se hace mención, son de carácter público, y pueden ser consultados en el Portal del Servicio de Administración Tributaria https://www.gob.mx/sat -acciones y programas- rubro General, NOTIFICACIÓN A CONTRIBUYENTES CON OPERACIONES PRESUNTAMENTE INEXISTENTES Y LISTADOS DEFINITIVOS- https://www.gob.mx/sat/acciones-y-programas/notificacion-a-contribuyentes-con-operaciones-presuntamente-inexistentes-y-listados-definitivos-333336, mismos que, al encontrarse firmados mediante firma electrónica (SIFEN), cuentan con el carácter de original, de conformidad con lo establecido en los artículos 38, párrafos primero fracción V, tercero, cuarto, quinto y sexto, y 17-D párrafos tercero y décimo del Código Fiscal de la Federación.
         Listado completo de contribuyentes (Artículo 69-B del CFF)
-        """
+
+    # ✅ Obtener texto legal por tabla
+    cursor.execute("SELECT tabla, linea1, linea2 FROM Texto_Legal_Tablas")
+    textos_legales = cursor.fetchall()
+    """
 
     conn = get_db_connection()
     if not conn:
@@ -332,8 +336,9 @@ def estadisticas():
             duplicates=duplicates,
             situaciones=situaciones,
             actualizaciones=actualizaciones,
-            texto_legal=texto_legal
+            textos_legales=textos_legales
         )
+
 
 
     except Exception as e:
@@ -513,6 +518,25 @@ def carga_csv():
 
         try:
             df = pd.read_csv(archivo, header=2)
+            
+            # ✅ Leer primeras dos líneas del archivo (texto legal)
+            archivo.stream.seek(0)
+            lineas = archivo.stream.read().decode('latin1').splitlines()
+            
+            linea1 = lineas[0] if len(lineas) > 0 else ""
+            linea2 = lineas[1] if len(lineas) > 1 else ""
+            
+            # ✅ Guardar texto legal para esta tabla específica
+            cursor.execute("DELETE FROM Texto_Legal_Tablas WHERE tabla = %s", (tabla_real,))
+            cursor.execute("""
+                INSERT INTO Texto_Legal_Tablas (tabla, linea1, linea2)
+                VALUES (%s, %s, %s)
+            """, (tabla_real, linea1, linea2))
+            conn.commit()
+            
+            # ✅ Regresar el puntero del archivo para que pandas pueda leerlo
+            archivo.stream.seek(0)
+
             
             if df.empty:
                 flash('El archivo CSV está vacío', 'danger')
