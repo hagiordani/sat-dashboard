@@ -577,7 +577,6 @@ def historial_cargas():
 # ---------------------------------------------------------
 # CARGA MASIVA TXT
 # ---------------------------------------------------------
-
 @app.route('/descargar_csv', methods=['POST'])
 def descargar_csv():
     archivo = request.files.get('archivo')
@@ -625,3 +624,4 @@ def descargar_csv():
     except Exception as e:
         flash(f'Error procesando archivo: {e}', 'danger')
         return redirect('/carga_masiva')
+
