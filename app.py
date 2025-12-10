@@ -515,6 +515,11 @@ def carga_csv():
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
+            # ✅ OPCIÓN A — REEMPLAZAR COMPLETAMENTE LA TABLA
+            cursor.execute(f"TRUNCATE TABLE {tabla_real}")
+            conn.commit()
+
+            # Obtener columnas válidas
             cursor.execute(f"DESCRIBE {tabla_real}")
             columnas_tabla = [col['Field'] for col in cursor.fetchall()]
 
@@ -547,7 +552,7 @@ def carga_csv():
             cursor.close()
             conn.close()
 
-            flash(f"✅ Se cargaron {total} registros correctamente en la tabla {tabla_real}", "success")
+            flash(f"✅ Se reemplazó completamente la tabla {tabla_real} y se cargaron {total} registros.", "success")
             return redirect(request.url)
 
         except Exception as e:
