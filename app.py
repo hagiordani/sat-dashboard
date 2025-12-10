@@ -505,14 +505,15 @@ def carga_csv():
             return redirect(request.url)
 
         try:
-            df = pd.read_csv(archivo)
-
+            df = pd.read_csv(archivo, header=2)
+            
             if df.empty:
                 flash('El archivo CSV está vacío', 'danger')
                 return redirect(request.url)
-
+            
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
+            
             # ✅ Validar columnas ANTES de borrar nada
             cursor.execute(f"DESCRIBE {tabla_real}")
             columnas_tabla = [col['Field'] for col in cursor.fetchall()]
@@ -534,6 +535,7 @@ def carga_csv():
             
             cursor.execute(f"TRUNCATE TABLE {tabla_real}")
             conn.commit()
+           
 
            
             df = df[columnas_validas]
