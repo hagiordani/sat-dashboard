@@ -676,3 +676,54 @@ def backups():
     conn.close()
 
     return render_template("backups.html", backups=lista)
+
+
+@app.route('/restaurar_backup/<tabla_backup>')
+def restaurar_backup(tabla_backup):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Obtener tabla original
+    tabla_original = tabla_backup.split("_backup_")[0]
+
+    try:
+        # Vaciar tabla original
+        cursor.execute(f"TRUNCATE TABLE {tabla_original}")
+
+        # Restaurar datos
+        cursor.execute(f"""
+            INSERT INTO {tabla_original}
+            SELECT * FROM {tabla_backup}
+        """)
+
+        conn.commit()
+
+        flash(f"✅ Backup {tabla_backup} restaurado correctamente en {tabla_original}.", "success")
+
+    except Exception as e:
+        flash(f"Error al restaurar backup: {e}", "danger")
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/backups")
+
+@app.route('/eliminar_backup/<tabla_backup>')
+def eliminar_backup(tabla_backup):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(f"DROP TABLE {tabla_backup}")
+        conn.commit()
+
+        flash(f"✅ Backup {tabla_backup} eliminado correctamente.", "success")
+
+    except Exception as e:
+        flash(f"Error al eliminar backup: {e}", "danger")
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/backups")
+
