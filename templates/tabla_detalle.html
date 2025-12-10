@@ -1,6 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
 
+{% if texto_legal %}
+<button class="btn btn-secondary mb-3" data-bs-toggle="modal" data-bs-target="#modalTextoLegal">
+  📄 Ver texto legal del SAT
+</button>
+{% endif %}
+
+<!-- Modal Texto Legal -->
+<div class="modal fade" id="modalTextoLegal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">Texto legal del SAT</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <p style="white-space: pre-line;">
+          {{ texto_legal.linea1 }}
+
+          {{ texto_legal.linea2 }}
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <h1 class="mb-2">{{ tabla_info.nombre }}</h1>
 <p class="text-muted mb-4">{{ tabla_info.descripcion }}</p>
 
