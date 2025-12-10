@@ -17,39 +17,53 @@
 
   <form method="POST" enctype="multipart/form-data">
 
-    <!-- Archivo TXT -->
     <div class="mb-3">
       <label class="form-label">Archivo TXT con RFCs</label>
       <input type="file" class="form-control" name="archivo" required>
     </div>
 
-    <!-- Nombre del archivo generado -->
     <div class="mb-3">
       <label class="form-label">Nombre del archivo generado (sin extensión)</label>
       <input type="text" class="form-control" name="nombre_reporte" placeholder="reporte_rfc">
     </div>
 
-    <!-- Selector visual de carpeta -->
     <div class="mb-3">
-      <label class="form-label">Seleccionar carpeta donde guardar</label>
-      <input type="file" id="folderPicker" class="form-control" webkitdirectory directory multiple>
-      <input type="hidden" name="ruta_destino" id="ruta_destino">
-      <small class="text-muted">Elige una carpeta. Se usará su ruta interna.</small>
+      <label class="form-label">Carpeta donde guardar</label>
+      <input type="text" class="form-control" name="ruta_destino" placeholder="static/descargas">
     </div>
 
     <button type="submit" class="btn btn-primary">Procesar RFCs</button>
   </form>
-</div>
 
-<script>
-  // ✅ Convertir selección de carpeta en ruta válida
-  document.getElementById('folderPicker').addEventListener('change', function (event) {
-    if (event.target.files.length > 0) {
-      const fullPath = event.target.files[0].webkitRelativePath;
-      const folder = fullPath.split('/')[0]; // Carpeta raíz seleccionada
-      document.getElementById('ruta_destino').value = "static/descargas/" + folder;
-    }
-  });
-</script>
+  {% if vista_previa %}
+  <hr>
+
+  <h3 class="h5 mt-4">Vista previa</h3>
+
+  <table class="table table-bordered table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Procesado</th>
+        <th>Encontrado en</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in vista_previa %}
+      <tr>
+        <td>{{ fila[0] }}</td>
+        <td>{{ fila[1] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="mt-3">
+    <a href="{{ enlace_csv }}" class="btn btn-success me-2" download>Descargar CSV</a>
+    <a href="{{ enlace_excel }}" class="btn btn-info" download>Descargar Excel</a>
+  </div>
+
+  {% endif %}
+
+</div>
 
 {% endblock %}
