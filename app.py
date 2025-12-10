@@ -593,7 +593,6 @@ def carga_masiva():
             contenido = archivo.read().decode('latin1').splitlines()
             rfcs = [line.strip().upper() for line in contenido if line.strip()]
 
-            # Conexión a BD
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
@@ -607,7 +606,6 @@ def carga_masiva():
 
             resultados = []
 
-            # Buscar cada RFC en las tablas
             for rfc in rfcs:
                 encontrado_en = ""
 
@@ -628,28 +626,33 @@ def carga_masiva():
             # Crear carpeta si no existe
             os.makedirs(ruta_destino, exist_ok=True)
 
-            # Nombre final del archivo CSV
-            nombre_final = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            ruta_completa = os.path.join(ruta_destino, nombre_final)
+            # CSV
+            nombre_csv = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            ruta_csv = os.path.join(ruta_destino, nombre_csv)
 
-            # Guardar CSV
-            with open(ruta_completa, 'w', newline='', encoding='utf-8') as f:
+            with open(ruta_csv, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(["Procesado", "Encontrado en"])
                 writer.writerows(resultados)
 
-            enlace = f"/{ruta_completa}"
+            # Excel
+            nombre_excel = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            ruta_excel = os.path.join(ruta_destino, nombre_excel)
 
-            flash(
-                f'Se procesaron {len(rfcs)} RFCs. '
-                f'<a href="{enlace}" download class="btn btn-success btn-sm ms-2">Descargar CSV</a>',
-                'success'
+            df = pd.DataFrame(resultados, columns=["Procesado", "Encontrado en"])
+            df.to_excel(ruta_excel, index=False)
+
+            # Guardar rutas para vista previa
+            return render_template(
+                'carga_masiva.html',
+                vista_previa=resultados,
+                enlace_csv=f"/{ruta_csv}",
+                enlace_excel=f"/{ruta_excel}"
             )
-
-            return redirect('/carga_masiva')
 
         except Exception as e:
             flash(f'Error procesando archivo: {e}', 'danger')
-            return redirect('/carga_masiva')
+            return redirect(request.url)
 
     return render_template('carga_masiva.html')
+
