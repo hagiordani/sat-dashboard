@@ -473,7 +473,6 @@ def exportar_tabla(nombre_tabla):
 # ---------------------------------------------------------
 # CARGA CSV
 # ---------------------------------------------------------
-
 @app.route('/carga_csv', methods=['GET', 'POST'])
 def carga_csv():
     if request.method == 'POST':
@@ -515,11 +514,19 @@ def carga_csv():
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
-            # ✅ OPCIÓN A — REEMPLAZAR COMPLETAMENTE LA TABLA
+            # ✅ 1. Crear nombre del backup
+            fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
+            tabla_backup = f"{tabla_real}_backup_{fecha}"
+
+            # ✅ 2. Crear backup automático
+            cursor.execute(f"CREATE TABLE {tabla_backup} AS SELECT * FROM {tabla_real}")
+            conn.commit()
+
+            # ✅ 3. Vaciar la tabla original
             cursor.execute(f"TRUNCATE TABLE {tabla_real}")
             conn.commit()
 
-            # Obtener columnas válidas
+            # ✅ 4. Obtener columnas válidas
             cursor.execute(f"DESCRIBE {tabla_real}")
             columnas_tabla = [col['Field'] for col in cursor.fetchall()]
 
@@ -542,7 +549,7 @@ def carga_csv():
 
             total = cursor.rowcount
 
-            # Registrar en historial
+            # ✅ 5. Registrar en historial
             cursor.execute("""
                 INSERT INTO Historial_Cargas (nombre_archivo, tabla, registros)
                 VALUES (%s, %s, %s)
@@ -552,7 +559,12 @@ def carga_csv():
             cursor.close()
             conn.close()
 
-            flash(f"✅ Se reemplazó completamente la tabla {tabla_real} y se cargaron {total} registros.", "success")
+            flash(
+                f"✅ Backup creado: <strong>{tabla_backup}</strong><br>"
+                f"✅ Tabla {tabla_real} reemplazada correctamente<br>"
+                f"✅ Registros cargados: {total}",
+                "success"
+            )
             return redirect(request.url)
 
         except Exception as e:
@@ -561,6 +573,7 @@ def carga_csv():
             return redirect(request.url)
 
     return render_template('carga_csv.html')
+
 
 # ---------------------------------------------------------
 # HISTORIAL DE CARGAS
