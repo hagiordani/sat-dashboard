@@ -578,81 +578,50 @@ def historial_cargas():
 # CARGA MASIVA TXT
 # ---------------------------------------------------------
 
-@app.route('/carga_masiva', methods=['GET', 'POST'])
-def carga_masiva():
-    if request.method == 'POST':
-        archivo = request.files.get('archivo')
-        nombre_reporte = request.form.get('nombre_reporte', 'reporte_rfc')
-        ruta_destino = request.form.get('ruta_destino', 'static/descargas')
+@app.route('/descargar_csv', methods=['POST'])
+def descargar_csv():
+    archivo = request.files.get('archivo')
 
-        if not archivo or archivo.filename == '':
-            flash('No seleccionaste ningún archivo', 'danger')
-            return redirect(request.url)
+    if not archivo or archivo.filename == '':
+        flash('No seleccionaste ningún archivo', 'danger')
+        return redirect('/carga_masiva')
 
-        try:
-            contenido = archivo.read().decode('latin1').splitlines()
-            rfcs = [line.strip().upper() for line in contenido if line.strip()]
+    try:
+        contenido = archivo.read().decode('latin1').splitlines()
+        rfcs = [line.strip().upper() for line in contenido if line.strip()]
 
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-            tablas = {
-                'Definitivos': 'Definitivos',
-                'Desvirtuados': 'Desvirtuados',
-                'Presuntos': 'Presuntos',
-                'SentenciasFavorables': 'SentenciasFavorables',
-                'Listado_Completo_69_B': 'Listado_Completo_69_B'
-            }
+        tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
+        resultados = []
 
-            resultados = []
+        for rfc in rfcs:
+            encontrado = ''
+            for tabla in tablas:
+                cursor.execute(f"SELECT COUNT(*) AS total FROM {tabla} WHERE UPPER(rfc) = %s", (rfc,))
+                if cursor.fetchone()['total'] > 0:
+                    encontrado = tabla
+                    break
+            resultados.append([rfc, encontrado])
 
-            for rfc in rfcs:
-                encontrado_en = ""
+        cursor.close()
+        conn.close()
 
-                for nombre_tabla, tabla_real in tablas.items():
-                    cursor.execute(
-                        f"SELECT COUNT(*) AS total FROM {tabla_real} WHERE UPPER(rfc) = %s",
-                        (rfc,)
-                    )
-                    if cursor.fetchone()['total'] > 0:
-                        encontrado_en = nombre_tabla
-                        break
+        # Generar CSV en memoria
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["Procesado", "Encontrado en"])
+        writer.writerows(resultados)
+        output.seek(0)
 
-                resultados.append([rfc, encontrado_en])
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='resultado_rfc.csv'
+        )
 
-            cursor.close()
-            conn.close()
-
-            # Crear carpeta si no existe
-            os.makedirs(ruta_destino, exist_ok=True)
-
-            # CSV
-            nombre_csv = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            ruta_csv = os.path.join(ruta_destino, nombre_csv)
-
-            with open(ruta_csv, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(["Procesado", "Encontrado en"])
-                writer.writerows(resultados)
-
-            # Excel
-            nombre_excel = f"{nombre_reporte}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-            ruta_excel = os.path.join(ruta_destino, nombre_excel)
-
-            df = pd.DataFrame(resultados, columns=["Procesado", "Encontrado en"])
-            df.to_excel(ruta_excel, index=False)
-
-            # Guardar rutas para vista previa
-            return render_template(
-                'carga_masiva.html',
-                vista_previa=resultados,
-                enlace_csv=f"/{ruta_csv}",
-                enlace_excel=f"/{ruta_excel}"
-            )
-
-        except Exception as e:
-            flash(f'Error procesando archivo: {e}', 'danger')
-            return redirect(request.url)
-
-    return render_template('carga_masiva.html')
-
+    except Exception as e:
+        flash(f'Error procesando archivo: {e}', 'danger')
+        return redirect('/carga_masiva')
