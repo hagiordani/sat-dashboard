@@ -646,3 +646,33 @@ def descargar_csv():
 @app.route('/carga_masiva', methods=['GET'])
 def carga_masiva():
     return render_template('carga_masiva.html')
+
+
+@app.route('/backups')
+def backups():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Buscar tablas que sean backups
+    cursor.execute("""
+        SHOW TABLES LIKE '%\_backup\_%'
+    """)
+
+    tablas = [list(row.values())[0] for row in cursor.fetchall()]
+
+    # Separar nombre base y fecha
+    lista = []
+    for t in tablas:
+        partes = t.split("_backup_")
+        tabla_original = partes[0]
+        fecha = partes[1]
+        lista.append({
+            "tabla": t,
+            "original": tabla_original,
+            "fecha": fecha
+        })
+
+    cursor.close()
+    conn.close()
+
+    return render_template("backups.html", backups=lista)
