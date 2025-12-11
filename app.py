@@ -895,6 +895,38 @@ def descargar_csv():
                 conn.close()
         except:
             pass
+# ---------------------------------------------------------
+# BACKUPS - LISTADO DE TABLAS BACKUP
+# ---------------------------------------------------------
+
+@app.route('/backups')
+def backups():
+    conn = get_db_connection()
+    if not conn:
+        return "Error de conexión a la base de datos", 500
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Buscar tablas que sean backups
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            AND table_name LIKE '%_backup_%'
+            ORDER BY table_name DESC
+        """)
+        tablas = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return render_template('backups.html', tablas=tablas)
+
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        return f"Error: {e}", 500
 
 
 # ---------------------------------------------------------
