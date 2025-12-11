@@ -818,6 +818,7 @@ def carga_masiva():
 # HISTORIAL DE CARGAS
 # ---------------------------------------------------------
 
+
 @app.route('/historial_cargas')
 def historial_cargas():
     conn = get_db_connection()
@@ -829,12 +830,18 @@ def historial_cargas():
     try:
         cursor.execute("SELECT * FROM Historial_Cargas ORDER BY fecha DESC LIMIT 200")
         cargas = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-
         return render_template('historial_cargas.html', cargas=cargas)
 
+    except Exception as e:
+        traceback.print_exc()
+        return f"Error: {e}", 500
+
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except:
+            pass
 
     # ---------------------------------------------------------
 # DESCARGAR CSV DESDE CARGA MASIVA
