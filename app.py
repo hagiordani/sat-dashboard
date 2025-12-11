@@ -835,6 +835,72 @@ def historial_cargas():
 
         return render_template('historial_cargas.html', cargas=cargas)
 
+
+    # ---------------------------------------------------------
+# DESCARGAR CSV DESDE CARGA MASIVA
+# ---------------------------------------------------------
+
+@app.route('/descargar_csv', methods=['POST'])
+def descargar_csv():
+    archivo = request.files.get('archivo')
+
+    if not archivo or archivo.filename == '':
+        flash('No seleccionaste ningún archivo TXT', 'danger')
+        return redirect('/carga_masiva')
+
+    try:
+        contenido = archivo.read().decode('latin1').splitlines()
+        rfcs = [line.strip().upper() for line in contenido if line.strip()]
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
+
+        resultados = []
+
+        for rfc in rfcs:
+            encontrado = False
+            tablas_encontradas = []
+
+            for tabla in tablas:
+                cursor.execute(f"SELECT COUNT(*) AS total FROM {tabla} WHERE UPPER(rfc) = %s", (rfc,))
+                if cursor.fetchone()['total'] > 0:
+                    encontrado = True
+                    tablas_encontradas.append(tabla)
+
+            resultados.append({
+                'rfc': rfc,
+                'encontrado': 'SI' if encontrado else 'NO',
+                'tablas': ", ".join(tablas_encontradas) if tablas_encontradas else ''
+            })
+
+        cursor.close()
+        conn.close()
+
+        # Crear CSV en memoria
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['RFC', 'Encontrado', 'Tablas'])
+
+        for r in resultados:
+            writer.writerow([r['rfc'], r['encontrado'], r['tablas']])
+
+        output.seek(0)
+
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype="text/csv",
+            as_attachment=True,
+            download_name=f"resultado_carga_masiva_{datetime.now().strftime('%Y%m%d')}.csv"
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        flash(f"Error generando CSV: {str(e)}", 'danger')
+        return redirect('/carga_masiva')
+
+
     except Exception as e:
         cursor.close()
         conn.close()
