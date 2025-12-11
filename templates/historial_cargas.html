@@ -1,35 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1 class="mb-4">Historial de Cargas</h1>
+<div class="container mt-4">
+    <h2 class="mb-4">Historial de Cargas</h2>
 
-<div class="card p-4 shadow-sm">
-
-  <div class="table-responsive">
-    <table class="table table-striped table-hover align-middle">
-      <thead class="table-primary">
-        <tr>
-          <th>ID</th>
-          <th>Archivo</th>
-          <th>Tabla</th>
-          <th>Registros</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for c in cargas %}
-        <tr>
-          <td>{{ c.id }}</td>
-          <td>{{ c.nombre_archivo }}</td>
-          <td>{{ c.tabla }}</td>
-          <td>{{ c.registros }}</td>
-          <td>{{ c.fecha }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
+    {% if cargas %}
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Archivo</th>
+                <th>Tabla</th>
+                <th>Registros</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in cargas %}
+            <tr>
+                <td>{{ c.fecha }}</td>
+                <td>{{ c.nombre_archivo }}</td>
+                <td>{{ c.tabla }}</td>
+                <td>{{ c.registros }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
-  </div>
-
+    {% else %}
+    <div class="alert alert-info">
+        No hay cargas registradas todavía.
+    </div>
+    {% endif %}
 </div>
 
 {% endblock %}
