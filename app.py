@@ -749,4 +749,68 @@ def carga_csv():
 
     return render_template('carga_csv.html')
 
+# ---------------------------------------------------------
+# CARGA MASIVA (VISTA DASHBOARD)
+# ---------------------------------------------------------
+
+@app.route('/carga_masiva', methods=['GET', 'POST'])
+def carga_masiva():
+    resultados = []
+    total_rfcs = 0
+    encontrados = 0
+    no_encontrados = 0
+
+    if request.method == 'POST':
+        archivo = request.files.get('archivo')
+
+        if not archivo or archivo.filename == '':
+            flash('No seleccionaste ningún archivo TXT', 'danger')
+            return redirect('/carga_masiva')
+
+        try:
+            contenido = archivo.read().decode('latin1').splitlines()
+            rfcs = [line.strip().upper() for line in contenido if line.strip()]
+            total_rfcs = len(rfcs)
+
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            tablas = ['Definitivos', 'Desvirtuados', 'Presuntos', 'SentenciasFavorables', 'Listado_Completo_69_B']
+
+            for rfc in rfcs:
+                encontrado = False
+                tablas_encontradas = []
+
+                for tabla in tablas:
+                    cursor.execute(f"SELECT COUNT(*) AS total FROM {tabla} WHERE UPPER(rfc) = %s", (rfc,))
+                    if cursor.fetchone()['total'] > 0:
+                        encontrado = True
+                        tablas_encontradas.append(tabla)
+
+                resultados.append({
+                    'rfc': rfc,
+                    'encontrado': encontrado,
+                    'tablas': tablas_encontradas
+                })
+
+                if encontrado:
+                    encontrados += 1
+                else:
+                    no_encontrados += 1
+
+            cursor.close()
+            conn.close()
+
+        except Exception as e:
+            traceback.print_exc()
+            flash(f"Error procesando el archivo: {str(e)}", 'danger')
+            return redirect('/carga_masiva')
+
+    return render_template(
+        'carga_masiva.html',
+        resultados=resultados,
+        total_rfcs=total_rfcs,
+        encontrados=encontrados,
+        no_encontrados=no_encontrados
+    )
 
