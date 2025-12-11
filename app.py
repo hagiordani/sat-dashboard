@@ -814,3 +814,29 @@ def carga_masiva():
         no_encontrados=no_encontrados
     )
 
+# ---------------------------------------------------------
+# HISTORIAL DE CARGAS
+# ---------------------------------------------------------
+
+@app.route('/historial_cargas')
+def historial_cargas():
+    conn = get_db_connection()
+    if not conn:
+        return "Error de conexión a la base de datos", 500
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT * FROM Historial_Cargas ORDER BY fecha DESC LIMIT 200")
+        cargas = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return render_template('historial_cargas.html', cargas=cargas)
+
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        return f"Error: {e}", 500
+
