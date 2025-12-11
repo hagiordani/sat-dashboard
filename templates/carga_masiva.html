@@ -1,27 +1,100 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1 class="mb-4">Carga Masiva de RFCs (TXT)</h1>
+<div class="container mt-4">
 
-<div class="card p-4 shadow-sm">
-  <h2 class="h5 mb-3">Subir archivo TXT</h2>
+    <h2 class="mb-4">Carga Masiva de RFCs</h2>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message|safe }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-    {% endfor %}
-  {% endwith %}
-
-  <form method="POST" action="/descargar_csv" enctype="multipart/form-data">
-    <div class="mb-3">
-      <label class="form-label">Archivo TXT con RFCs</label>
-      <input type="file" class="form-control" name="archivo" required>
+    <!-- Formulario -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form action="/carga_masiva" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Selecciona archivo TXT</label>
+                    <input type="file" name="archivo" class="form-control" accept=".txt" required>
+                </div>
+                <button class="btn btn-primary">Procesar archivo</button>
+            </form>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary">Procesar y Descargar CSV</button>
-  </form>
+
+    {% if total_rfcs > 0 %}
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-bg-primary shadow-sm">
+                <div class="card-body">
+                    <h5>Total de RFCs</h5>
+                    <h2>{{ total_rfcs }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-bg-success shadow-sm">
+                <div class="card-body">
+                    <h5>Encontrados</h5>
+                    <h2>{{ encontrados }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-bg-danger shadow-sm">
+                <div class="card-body">
+                    <h5>No encontrados</h5>
+                    <h2>{{ no_encontrados }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h4 class="mb-3">Resultados</h4>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>RFC</th>
+                        <th>Estado</th>
+                        <th>Tablas donde aparece</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in resultados %}
+                    <tr>
+                        <td>{{ r.rfc }}</td>
+                        <td>
+                            {% if r.encontrado %}
+                                <span class="badge bg-success">Encontrado</span>
+                            {% else %}
+                                <span class="badge bg-danger">No encontrado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.tablas %}
+                                {{ r.tablas | join(', ') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <form action="/descargar_csv" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="archivo" value="">
+                <button class="btn btn-success mt-3">Descargar CSV</button>
+            </form>
+
+        </div>
+    </div>
+
+    {% endif %}
+
 </div>
 
 {% endblock %}
