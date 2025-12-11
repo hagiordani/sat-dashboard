@@ -85,10 +85,13 @@
                 </tbody>
             </table>
 
-            <form action="/descargar_csv" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="archivo" value="">
-                <button class="btn btn-success mt-3">Descargar CSV</button>
+           <form action="/descargar_csv" method="POST" enctype="multipart/form-data">
+                <input type="file" name="archivo" hidden>
+                <button class="btn btn-success mt-3" onclick="document.querySelector('input[name=archivo]').files = document.querySelector('input[type=file]').files">
+                    Descargar CSV
+                </button>
             </form>
+
 
         </div>
     </div>
